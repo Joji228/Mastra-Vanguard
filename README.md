@@ -1,6 +1,6 @@
-# Astra Vanguard (GPT 5.6 SOL (xHIGH)) — Web Game Benchmark
+# Astra Vanguard — GPT 5.6 SOL Web Game Benchmark
 
-**A zero-dependency browser-game benchmark created with GPT 5.6 SOL (xHIGH) to evaluate an AI model's ability to turn a single detailed prompt into a complete, polished, playable web experience.**
+**A zero-dependency browser-game benchmark created with GPT 5.6 SOL to evaluate an AI model's ability to turn a single detailed prompt into a complete, polished, playable web experience.**
 
 ## [▶ Play Astra Vanguard Online](https://joji228.github.io/astra-vanguard-gpt-5-6-sol-xhigh/)
 
@@ -12,7 +12,7 @@ Astra Vanguard is an original 2D superhero action-platformer rendered entirely w
 
 | Field | Value |
 | --- | --- |
-| Model | GPT 5.6 SOL (xHIGH) |
+| Model | GPT 5.6 SOL |
 | Environment | Codex desktop |
 | Generation date | August 17, 2026 |
 | Input | One detailed natural-language specification |
