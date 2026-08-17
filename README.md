@@ -2,6 +2,10 @@
 
 **A zero-dependency browser-game benchmark created with GPT-5.6 Sol to evaluate an AI model's ability to turn a single detailed prompt into a complete, polished, playable web experience.**
 
+## [▶ Play Astra Vanguard Online](https://joji228.github.io/astra-vanguard-ai-benchmark/)
+
+No download or installation is required. Open the link in a modern desktop browser and play immediately.
+
 Astra Vanguard is an original 2D superhero action-platformer rendered entirely with the HTML5 Canvas API. The whole game lives in one `index.html` file and runs by opening that file in a modern desktop browser—no server, package manager, build step, external library, downloaded asset, or installation is required.
 
 ## Benchmark provenance
