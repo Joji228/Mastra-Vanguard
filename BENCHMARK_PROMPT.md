@@ -1,9 +1,9 @@
-# Exact Benchmark Prompt
+# Model-Neutral Benchmark Prompt
 
-The text below is preserved verbatim from the prompt used to request the game.
+This model-neutral version preserves the complete game specification while removing the original model-specific opening.
 
 ```text
-You are GPT-5.6 Sol acting as an expert JavaScript game developer. Build me a **complete, playable browser-based superhero platformer game** inspired by the *feeling* of Superman-style powers, but **do not use copyrighted Superman names, logos, costumes, characters, music, or assets**. Create an original flying superhero.
+You are acting as an expert JavaScript game developer. Build me a **complete, playable browser-based superhero platformer game** inspired by the *feeling* of Superman-style powers, but **do not use copyrighted Superman names, logos, costumes, characters, music, or assets**. Create an original flying superhero.
 
 ## Main requirement
 

@@ -19,7 +19,7 @@ Astra Vanguard is an original 2D superhero action-platformer rendered entirely w
 | Primary output | One self-contained `index.html` |
 | External runtime dependencies | None |
 
-The complete input specification is preserved verbatim in [`BENCHMARK_PROMPT.md`](BENCHMARK_PROMPT.md). This repository is intended as a reproducible artifact for comparing AI models on end-to-end web game development—not merely code completion.
+The complete model-neutral specification is available in [`BENCHMARK_PROMPT.md`](BENCHMARK_PROMPT.md). This repository is intended as a reproducible artifact for comparing AI models on end-to-end web game development—not merely code completion.
 
 ## What the benchmark exercises
 
