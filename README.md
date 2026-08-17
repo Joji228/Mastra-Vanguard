@@ -63,7 +63,3 @@ When using the prompt with another model, consider scoring:
 6. **Code quality** — Is the single-file implementation organized and maintainable?
 7. **Constraint adherence** — Is the result truly offline, original, and dependency-free?
 
-## Originality
-
-The game uses an original hero, setting, visual identity, and procedurally drawn assets. It does not use Superman names, logos, characters, costumes, music, or downloaded intellectual property.
-
