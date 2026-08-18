@@ -6,7 +6,23 @@
 
 No download or installation is required. Open the link in a modern desktop browser and play immediately.
 
-Astra Vanguard is an original 2D superhero action-platformer rendered entirely with the HTML5 Canvas API. The whole game lives in one `index.html` file and runs by opening that file in a modern desktop browser—no server, package manager, build step, external library, downloaded asset, or installation is required.
+Astra Vanguard is an original 2D superhero action-platformer rendered with the HTML5 Canvas API. This long-term fork keeps the game runtime in one `index.html` file and adds a small set of local, generated character assets under `assets/sprites/`. It still runs by opening `index.html` in a modern desktop browser—no server, package manager, build step, external library, or installation is required.
+
+## Long-term fork upgrades
+
+- High-detail transparent artwork for Astra, shock troopers, and prism hunter drones
+- Procedural fallback rendering if a sprite is unavailable
+- Telegraphed shock-trooper rush attacks with distinct charge feedback
+- Orbiting prism drones with visible charge states and three-shot shard volleys
+- Improved hostile projectile silhouettes, trails, hit readability, and encounter scoring
+- Genuine multi-frame Astra and shock-trooper sprite sheets: idle/breathing, alternating left/right footfalls, plus hand-fired prism beam, flight, and charge poses
+- Supporting motion polish: flight banking, thruster trails, beam recoil, muzzle flashes, hit reactions, and hover pulses
+- Disk-native alpha transparency for direct `index.html` play, plus four-beat walk timing and per-frame foot-baseline alignment
+- Directional prism-beam poses: Astra's leading arm and hand now track steep/shallow upward and downward firing angles
+- Hold-to-activate super speed for running and flight, with a separate rechargeable energy bar, afterimages, particles, streaks, and activation audio
+- Four-beat breathing/weight-shift idle animation with a looping ambient cape breeze
+- Dedicated four-frame airborne cape-ripple animation that accelerates with flight speed
+- Original Meridian City panoramic map artwork, blended with the procedural skyline as a deep parallax layer
 
 ## Benchmark provenance
 
@@ -47,6 +63,7 @@ The complete model-neutral specification is available in [`BENCHMARK_PROMPT.md`]
 | `W` | Jump or ascend while flying |
 | `S` | Descend while flying |
 | `F` | Toggle flight |
+| Hold `Shift` | Activate super speed while moving |
 | Left mouse / `Space` | Fire prism beam toward the cursor |
 | `Esc` | Pause / resume |
 | `R` | Restart after death or victory |
@@ -62,4 +79,3 @@ When using the prompt with another model, consider scoring:
 5. **Visual polish** — Does procedural presentation feel intentional and readable?
 6. **Code quality** — Is the single-file implementation organized and maintainable?
 7. **Constraint adherence** — Is the result truly offline, original, and dependency-free?
-
