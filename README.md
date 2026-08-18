@@ -22,7 +22,13 @@ Astra Vanguard is an original 2D superhero action-platformer rendered with the H
 - Hold-to-activate super speed for running and flight, with a separate rechargeable energy bar, afterimages, particles, streaks, and activation audio
 - Four-beat breathing/weight-shift idle animation with a looping ambient cape breeze
 - Dedicated four-frame airborne cape-ripple animation that accelerates with flight speed
+- Smoothed, forward-only cape phase blending during flight acceleration and deceleration
+- Expanded flight-energy capacity from 100 to 135 for 35% longer sustained flight
 - Original Meridian City panoramic map artwork, blended with the procedural skyline as a deep parallax layer
+- Four original modular building-facade styles layered across the playable city architecture
+- Prism beams pass through building scenery while enemies and destructible crates still intercept shots
+- Flight energy recharges 25% faster whenever Astra is not flying, and every enemy defeat restores 10% of the full meter
+- Distance-synchronized Shift sprinting for Astra and animated alternating charge footfalls for shock troopers
 
 ## Benchmark provenance
 
