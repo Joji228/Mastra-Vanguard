@@ -471,7 +471,7 @@
   // ---------- Characters ----------
   class Player {
     constructor(x,y){this.spawnX=x;this.spawnY=y;this.reset();}
-    reset(){Object.assign(this,{x:this.spawnX,y:this.spawnY,w:CFG.playerW,h:CFG.playerH,vx:0,vy:0,onGround:false,flying:false,energy:CFG.maxEnergy,speedEnergy:100,boosting:false,speedBuild:0,sonicBoomTriggered:false,speedAudioAt:0,hp:CFG.maxHp,healthRegenDelay:0,dead:false,invuln:0,fireCd:0,ultimateCharges:CFG.ultimateMaxCharges,ultimateKills:0,ultimateCd:0,ultimateFlash:0,facing:1,aimAngle:0,anim:0,walkCycle:0,flightCapePhase:0,flightCapeRate:0,shootAnim:0,shootDuration:.22,hurtAnim:0,deathAt:0,landed:false,flightTrail:0,speedTrail:0,sprintDust:0,beamCharge:0,chargingBeam:false,beamWasFull:false,chargePulse:0,chargeFired:false});}
+    reset(){Object.assign(this,{x:this.spawnX,y:this.spawnY,w:CFG.playerW,h:CFG.playerH,vx:0,vy:0,onGround:false,flying:false,walkThroughBuildings:true,energy:CFG.maxEnergy,speedEnergy:100,boosting:false,speedBuild:0,sonicBoomTriggered:false,speedAudioAt:0,hp:CFG.maxHp,healthRegenDelay:0,dead:false,invuln:0,fireCd:0,ultimateCharges:CFG.ultimateMaxCharges,ultimateKills:0,ultimateCd:0,ultimateFlash:0,facing:1,aimAngle:0,anim:0,walkCycle:0,flightCapePhase:0,flightCapeRate:0,shootAnim:0,shootDuration:.22,hurtAnim:0,deathAt:0,landed:false,flightTrail:0,speedTrail:0,sprintDust:0,beamCharge:0,chargingBeam:false,beamWasFull:false,chargePulse:0,chargeFired:false});}
     restoreKillEnergy(g){
       const before=this.energy;this.energy=Math.min(CFG.maxEnergy,this.energy+CFG.maxEnergy*CFG.killEnergyRestore);
       if(this.energy>before){g.burst(this.x+this.w/2,this.y+this.h*.42,'#63f5ff',9,125);g.audio.tone(440,.16,'sine',.025,260);}
@@ -724,10 +724,18 @@
       const steps=Math.max(1,Math.ceil(Math.max(Math.abs(e.vx*dt),Math.abs(e.vy*dt))/8)),sx=e.vx*dt/steps,sy=e.vy*dt/steps;
       for(let i=0;i<steps;i++){
         e.x+=sx;
-        for(const p of this.platforms)if(overlap(e,p)){if(sx>0)e.x=p.x-e.w;else if(sx<0)e.x=p.x+p.w;e.vx=0;}
+        for(const p of this.platforms)if(overlap(e,p)&&!(e.walkThroughBuildings&&p.style==='building')){if(sx>0)e.x=p.x-e.w;else if(sx<0)e.x=p.x+p.w;e.vx=0;}
         e.x=clamp(e.x,0,CFG.worldW-e.w);
+        const previousBottom=e.y+e.h;
         e.y+=sy;
-        for(const p of this.platforms)if(overlap(e,p)){if(sy>0){e.y=p.y-e.h;e.onGround=true;}else if(sy<0)e.y=p.y+p.h;e.vy=0;}
+        for(const p of this.platforms)if(overlap(e,p)){
+          if(e.walkThroughBuildings&&p.style==='building'){
+            // Astra crosses façade art freely, but still lands cleanly on rooftops.
+            if(sy>0&&previousBottom<=p.y+1){e.y=p.y-e.h;e.onGround=true;e.vy=0;}
+            continue;
+          }
+          if(sy>0){e.y=p.y-e.h;e.onGround=true;}else if(sy<0)e.y=p.y+p.h;e.vy=0;
+        }
       }
     }
     burst(x,y,color,count=10,speed=180){for(let i=0;i<count;i++){const a=rand(0,Math.PI*2),s=rand(speed*.25,speed);this.particles.push(new Particle(x,y,Math.cos(a)*s,Math.sin(a)*s,rand(.2,.65),color,rand(2,6),rand(0,340)));}}

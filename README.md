@@ -1,72 +1,35 @@
 # Mastra Vanguard
 
-**Mastra Vanguard is a living 2D superhero action-platformer built as a long-term creative project with Codex and GPT-5.6. Every update deepens the combat, movement, art direction, and world of Meridian City.**
+[▶ Play online](https://joji228.github.io/Mastra-Vanguard/)
 
-## [▶ Play Mastra Vanguard Online](https://joji228.github.io/Mastra-Vanguard/)
+Mastra Vanguard is a 2D superhero action-platformer set in Meridian City. Play as Astra: fly, sprint at super speed, fire prism beams, and defeat the Prism Warden.
 
-No installation is required. Open the link in a modern desktop browser and play immediately.
+This is a long-term creative game project developed with Codex and GPT-5.6.
 
-Mastra Vanguard is an original HTML5 Canvas action-platformer. You play as Astra, protecting Meridian City from shock troopers, prism drones, and the towering Prism Warden with flight, super speed, and a hand-fired prism beam. The game uses local assets, runs from a single `index.html` file, and needs no build step or external runtime dependencies.
+## Version 0.1 highlights
 
-## Long-term development
+- Stage One campaign and Prism Warden boss fight
+- Classic Mode and God Mode
+- Flight, Shift super speed, Super Beam, and Prism Nova ultimate
+- Animated Astra, shock troopers, drones, boss, and city scenery
+- Original Meridian City art, music, sound effects, and pause-menu audio controls
 
-This repository is the home for an ongoing game, not a one-off demo. Codex and GPT-5.6 are development partners in a continuing process of improving gameplay, visuals, animation, sound, balance, and the wider world. The ambition is simple: make Mastra Vanguard more expressive, polished, and fun with every playable release.
+## Play locally
 
-## Current highlights
+Open `index.html` in a modern desktop browser. No install or build step is needed.
 
-- A complete Stage One campaign flow: clear normal hostiles, follow the eastern rooftop signal, survive the final encounter, and secure Meridian City
-- A polished deployment title screen with Classic Mode for the intended challenge and a clearly labeled God Mode with invincibility, unlimited energy, separate scores, and 5× Astra damage
-- Progressive Shift super speed: acceleration buildup, evolving trails and afterimages, a sonic-barrier break, shockwave, screen impact, and layered procedural boom audio
-- Hold-Space Super Beam: mobile hand-charge effects, electric blue-white core, piercing charged blast, recoil, impact bursts, and charge-scaled damage
-- Three-charge Prism Nova ultimate: press `V` to release a massive radial blast; each three normal enemy defeats restores one charge
-- Prism Warden final boss with three escalating phases, aimed prism volleys, aerial charges, rooftop slams, traveling shockwaves, fair telegraphs, and flight-aware counterplay
-- Five original transparent boss sprite sheets covering hover idle, movement, ranged attack, slam, hit reaction, and a progressive nine-frame destruction sequence
-- Dedicated boss HUD, arena barrier, entrance title card, reactor instability effects, phase transitions, procedural boss audio, score reward, and animated Stage One completion
-- High-detail transparent artwork for Astra, shock troopers, and prism hunter drones
-- Procedural fallback rendering if a sprite is unavailable
-- Telegraphed shock-trooper rush attacks with distinct charge feedback
-- Orbiting prism drones with visible charge states and three-shot shard volleys
-- Improved hostile projectile silhouettes, trails, hit readability, and encounter scoring
-- Genuine multi-frame Astra and shock-trooper sprite sheets: idle/breathing, alternating left/right footfalls, plus hand-fired prism beam, flight, and charge poses
-- Supporting motion polish: flight banking, thruster trails, beam recoil, muzzle flashes, hit reactions, and hover pulses
-- Disk-native alpha transparency for direct `index.html` play, plus four-beat walk timing and per-frame foot-baseline alignment
-- Directional prism-beam poses: Astra's leading arm and hand now track steep/shallow upward and downward firing angles
-- Hold-to-activate super speed for running and flight, with a separate rechargeable energy bar, afterimages, particles, streaks, and activation audio
-- Four-beat breathing/weight-shift idle animation with a looping ambient cape breeze
-- Dedicated four-frame airborne cape-ripple animation that accelerates with flight speed
-- Smoothed, forward-only cape phase blending during flight acceleration and deceleration
-- Expanded flight-energy capacity from 100 to 135 for 35% longer sustained flight
-- Original Meridian City panoramic map artwork, blended with the procedural skyline as a deep parallax layer
-- Four original modular building-facade styles layered across the playable city architecture
-- Prism beams pass through building scenery while enemies and destructible crates still intercept shots
-- Flight energy recharges 25% faster whenever Astra is not flying, and every enemy defeat restores 10% of the full meter
-- Distance-synchronized Shift sprinting for Astra and animated alternating charge footfalls for shock troopers
-- Looping Meridian City background OST with independent music/SFX volume controls and a full pause-menu mixer
-
-## Version 0.1
-
-The first public playable build of Mastra Vanguard: Stage One, the Prism Warden boss, Classic and God Modes, animated movement, flight, super speed, charged beams, Prism Nova, audio controls, and the evolving Meridian City art direction.
-
-## Run locally
-
-1. Download or clone this repository.
-2. Open `index.html` in a modern desktop browser.
-
-### Controls
+## Controls
 
 | Input | Action |
 | --- | --- |
-| `A` / `D` | Move left / right |
-| `W` | Jump or ascend while flying |
-| `S` | Descend while flying |
+| `A` / `D` | Move |
+| `W` / `S` | Jump, ascend, or descend |
 | `F` | Toggle flight |
-| Hold `Shift` | Build progressive super speed while moving |
-| Left mouse | Fire rapid prism beams toward the cursor |
-| Hold `Space`, then release | Charge and fire the piercing Super Beam (quick tap fires a prism beam) |
-| `V` | Release a Prism Nova area blast (three charges; regain one after three enemy defeats) |
-| `Esc` | Pause / resume |
-| `R` | Restart after death or victory |
+| Hold `Shift` | Super speed |
+| Click | Fire prism beam |
+| Hold then release `Space` | Super Beam |
+| `V` | Prism Nova |
+| `Esc` | Pause |
+| `R` | Restart |
 
-## Project notes
-
-The original model-neutral design brief remains available in [`BENCHMARK_PROMPT.md`](BENCHMARK_PROMPT.md) as part of the project's history. Mastra Vanguard has since become its own long-term game project, with its direction shaped through continued iteration in Codex and GPT-5.6.
+Project history and the original design brief: [`BENCHMARK_PROMPT.md`](BENCHMARK_PROMPT.md).
