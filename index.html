@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Astra Vanguard (GPT 5.6 SOL (xHIGH)) — Neon City Defender</title>
+  <title>Mastra Vanguard — Neon City Defender</title>
   <style>
     :root { color-scheme: dark; }
     * { box-sizing: border-box; }
@@ -17,6 +17,29 @@
     }
     #controls b { color: #74ecff; font-weight: 800; }
     #actions { position: fixed; right: 15px; top: 14px; z-index: 3; display: flex; gap: 8px; }
+    #pauseMenu { position: fixed; inset: 0; z-index: 8; display: grid; place-items: center; padding: 24px; background: rgba(2,7,18,.72); backdrop-filter: blur(14px); opacity: 0; pointer-events: none; transition: opacity .22s ease; }
+    #pauseMenu.is-open { opacity: 1; pointer-events: auto; }
+    .pause-card { width: min(760px, 94vw); max-height: min(720px, 92vh); overflow: auto; padding: clamp(22px, 4vw, 38px); border: 1px solid rgba(113,237,255,.36); border-radius: 22px; background: linear-gradient(145deg, rgba(9,27,58,.97), rgba(4,12,29,.97)); box-shadow: 0 28px 90px rgba(0,0,0,.55), inset 0 1px rgba(225,253,255,.1); color: #e9fcff; }
+    .pause-kicker { color: #70ecff; font: 800 11px/1 system-ui, sans-serif; letter-spacing: .22em; }
+    .pause-card h1 { margin: 8px 0 5px; color: #f2ffff; font: 900 clamp(38px, 7vw, 66px)/.95 system-ui, sans-serif; letter-spacing: .08em; text-shadow: 0 0 26px rgba(93,236,255,.35); }
+    .pause-subtitle { margin: 0; color: rgba(225,250,255,.66); font: 600 14px/1.5 system-ui, sans-serif; }
+    .pause-grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 14px; margin: 28px 0 20px; }
+    .pause-panel { padding: 18px; border: 1px solid rgba(123,225,255,.16); border-radius: 14px; background: rgba(3,12,30,.54); }
+    .pause-panel h2 { margin: 0 0 15px; color: #8ff3ff; font: 800 12px/1 system-ui, sans-serif; letter-spacing: .15em; }
+    .volume-row { margin: 15px 0 18px; }
+    .volume-head { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 8px; color: #e8fbff; font: 750 13px/1 system-ui, sans-serif; }
+    .volume-value { color: #73ebff; font-variant-numeric: tabular-nums; }
+    input[type=range] { width: 100%; height: 6px; accent-color: #69e9ff; cursor: pointer; }
+    .pause-controls { display: grid; gap: 10px; margin: 0; padding: 0; color: rgba(227,249,255,.76); list-style: none; font: 650 12px/1.5 system-ui, sans-serif; }
+    .pause-controls li { display: flex; justify-content: space-between; gap: 14px; padding-bottom: 8px; border-bottom: 1px solid rgba(142,232,255,.1); }
+    .pause-controls li:last-child { padding-bottom: 0; border-bottom: 0; }
+    .pause-controls b { color: #fff; font-weight: 850; }
+    .pause-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    .pause-actions button { min-width: 148px; padding: 12px 15px; }
+    #resumeGame { color: #031420; border-color: #78efff; background: linear-gradient(100deg, #56d8ed, #b6fbff); }
+    #resumeGame:hover { color: #031420; background: linear-gradient(100deg, #a4f6ff, #fff); }
+    #pauseMute { margin-top: 5px; }
+    .pause-hint { margin: 17px 0 0; color: rgba(207,242,248,.48); font: 600 11px/1.4 system-ui, sans-serif; }
     button {
       appearance: none; border: 1px solid rgba(122,235,255,.35); border-radius: 8px; padding: 8px 11px;
       color: #e7fcff; background: rgba(5,18,40,.74); font: 700 12px/1 system-ui, sans-serif; letter-spacing: .05em;
@@ -26,11 +49,13 @@
     @media (max-width: 760px), (max-height: 600px) {
       #controls { font-size: 10px; padding: 7px 9px; max-width: 72vw; }
       button { padding: 7px 9px; }
+      .pause-grid { grid-template-columns: 1fr; margin: 20px 0 16px; }
+      .pause-card { border-radius: 16px; }
     }
   </style>
 </head>
 <body>
-  <canvas id="game" aria-label="Astra Vanguard superhero action platformer"></canvas>
+  <canvas id="game" aria-label="Mastra Vanguard superhero action platformer"></canvas>
   <div id="controls">
     <b>A / D</b> RUN &nbsp; <b>W</b> JUMP / ASCEND &nbsp; <b>S</b> DESCEND<br>
     <b>F</b> TOGGLE FLIGHT &nbsp; <b>SHIFT</b> SUPER SPEED &nbsp; <b>CLICK / SPACE</b> PRISM BEAM &nbsp; <b>ESC</b> PAUSE &nbsp; <b>R</b> RESTART
@@ -38,6 +63,43 @@
   <div id="actions">
     <button id="mute" aria-label="Toggle sound">SOUND: ON</button>
     <button id="fullscreen" aria-label="Toggle fullscreen">FULLSCREEN</button>
+  </div>
+  <div id="pauseMenu" aria-hidden="true">
+    <section class="pause-card" role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
+      <div class="pause-kicker">MASTRA VANGUARD // MISSION CONTROL</div>
+      <h1 id="pauseTitle">PAUSED</h1>
+      <p class="pause-subtitle">Meridian City is waiting. Tune the experience, then jump back into the fight.</p>
+      <div class="pause-grid">
+        <section class="pause-panel" aria-labelledby="audioTitle">
+          <h2 id="audioTitle">AUDIO MIXER</h2>
+          <div class="volume-row">
+            <div class="volume-head"><label for="musicVolume">Music</label><span class="volume-value" id="musicValue">55%</span></div>
+            <input id="musicVolume" type="range" min="0" max="1" step=".01" value=".55" aria-label="Music volume">
+          </div>
+          <div class="volume-row">
+            <div class="volume-head"><label for="sfxVolume">SFX</label><span class="volume-value" id="sfxValue">65%</span></div>
+            <input id="sfxVolume" type="range" min="0" max="1" step=".01" value=".65" aria-label="Sound effects volume">
+          </div>
+          <button id="pauseMute" type="button">MUTE ALL AUDIO</button>
+        </section>
+        <section class="pause-panel" aria-labelledby="controlsTitle">
+          <h2 id="controlsTitle">FIELD CONTROLS</h2>
+          <ul class="pause-controls">
+            <li><span>Move</span><b>A / D</b></li>
+            <li><span>Jump / ascend</span><b>W</b></li>
+            <li><span>Flight</span><b>F</b></li>
+            <li><span>Super speed</span><b>Hold Shift</b></li>
+            <li><span>Prism beam</span><b>Click / Space</b></li>
+            <li><span>Pause</span><b>Esc</b></li>
+          </ul>
+        </section>
+      </div>
+      <div class="pause-actions">
+        <button id="resumeGame" type="button">RESUME MISSION</button>
+        <button id="restartGame" type="button">RESTART MISSION</button>
+      </div>
+      <p class="pause-hint">Tip: the music and SFX sliders are saved for this session. Press Esc any time to return here.</p>
+    </section>
   </div>
 
   <script>
@@ -149,18 +211,28 @@
   }
 
   class AudioFX {
-    constructor() { this.ctx = null; this.muted = false; }
+    constructor() {
+      this.ctx = null; this.muted = false; this.musicVolume = .55; this.sfxVolume = .65; this.musicPaused = false;
+      this.music = new Audio('Background OST.mp3'); this.music.loop = true; this.music.preload = 'auto'; this.music.volume = this.musicVolume;
+    }
     unlock() {
       if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
       if (this.ctx.state === 'suspended') this.ctx.resume();
+      if (!this.muted && !this.musicPaused && this.music.paused && this.musicVolume > 0) { const play = this.music.play(); if (play?.catch) play.catch(() => {}); }
     }
     tone(freq, dur, type='sine', vol=.05, slide=0) {
       if (this.muted) return; this.unlock();
       const t = this.ctx.currentTime, o = this.ctx.createOscillator(), g = this.ctx.createGain();
       o.type = type; o.frequency.setValueAtTime(freq, t); o.frequency.exponentialRampToValueAtTime(Math.max(30, freq + slide), t + dur);
-      g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+      g.gain.setValueAtTime(vol * this.sfxVolume, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
       o.connect(g).connect(this.ctx.destination); o.start(t); o.stop(t + dur);
     }
+    setMusicVolume(value) { this.musicVolume = clamp(Number(value), 0, 1); this.music.volume = this.musicVolume; if (this.musicVolume > 0 && !this.muted) this.unlock(); }
+    setSfxVolume(value) { this.sfxVolume = clamp(Number(value), 0, 1); }
+    setMuted(value) { this.muted = Boolean(value); this.music.muted = this.muted; if (this.muted) this.music.pause(); else this.unlock(); }
+    toggleMuted() { this.setMuted(!this.muted); return this.muted; }
+    pauseMusic() { this.musicPaused = true; this.music.pause(); }
+    resumeMusic() { this.musicPaused = false; if (!this.muted) this.unlock(); }
     laser() { this.tone(520, .09, 'sawtooth', .035, -230); }
     jump() { this.tone(170, .13, 'square', .035, 180); }
     flight(on) { this.tone(on ? 120 : 240, .22, 'sawtooth', .045, on ? 330 : -120); }
@@ -437,8 +509,9 @@
       this.crates=[new Crate(720,1078),new Crate(1830,1138,'barrel'),new Crate(2870,1038),new Crate(4550,1108,'barrel'),new Crate(4950,878)];
       this.pickups=[new Pickup(1285,805,'energy'),new Pickup(3205,395,'health'),new Pickup(4515,525,'energy')];
       this.particles=[];this.beams=[];this.projectiles=[];this.score=0;this.victory=false;this.victoryPlayed=false;this.intro=5;this.paused=false;this.camera.x=0;this.camera.y=700;this.shake=0;
-      try{this.highScore=Number(localStorage.getItem('astraVanguardHigh')||0);}catch(e){this.highScore=0;}
+      try{this.highScore=Number(localStorage.getItem('mastraVanguardHigh')||localStorage.getItem('astraVanguardHigh')||0);}catch(e){this.highScore=0;}
     }
+    setPaused(value){if(this.paused===value)return;this.paused=value;if(this.paused)this.audio.pauseMusic();else this.audio.resumeMusic();syncPauseMenu(this);}
     moveSolid(e,dt){
       const steps=Math.max(1,Math.ceil(Math.max(Math.abs(e.vx*dt),Math.abs(e.vy*dt))/8)),sx=e.vx*dt/steps,sy=e.vy*dt/steps;
       for(let i=0;i<steps;i++){
@@ -452,7 +525,7 @@
     burst(x,y,color,count=10,speed=180){for(let i=0;i<count;i++){const a=rand(0,Math.PI*2),s=rand(speed*.25,speed);this.particles.push(new Particle(x,y,Math.cos(a)*s,Math.sin(a)*s,rand(.2,.65),color,rand(2,6),rand(0,340)));}}
     dust(x,y,count){for(let i=0;i<count;i++)this.particles.push(new Particle(x+rand(-14,14),y-2,rand(-95,95),rand(-130,-25),rand(.25,.5),'#9ac5d0',rand(3,7),280));}
     update(dt){
-      if(this.input.hit('escape'))this.paused=!this.paused;
+      if(this.input.hit('escape')&&!this.player.dead&&!this.victory)this.setPaused(!this.paused);
       if(this.input.hit('r')&&(this.player.dead||this.victory))this.reset();
       if(this.paused||this.player.dead||this.victory){this.input.endFrame();return;}
       this.intro=Math.max(0,this.intro-dt);this.player.update(dt,this);
@@ -460,7 +533,7 @@
       for(const b of this.beams)b.life-=dt;
       this.enemies=this.enemies.filter(e=>!e.dead);this.crates=this.crates.filter(c=>!c.dead);this.pickups=this.pickups.filter(p=>!p.dead);this.projectiles=this.projectiles.filter(p=>!p.dead);this.particles=this.particles.filter(p=>p.life>0);this.beams=this.beams.filter(b=>b.life>0);
       if(!this.enemies.length){this.victory=true;if(!this.victoryPlayed){this.victoryPlayed=true;this.audio.victory();this.score+=1000;}}
-      if(this.score>this.highScore){this.highScore=this.score;try{localStorage.setItem('astraVanguardHigh',String(this.highScore));}catch(e){}}
+      if(this.score>this.highScore){this.highScore=this.score;try{localStorage.setItem('mastraVanguardHigh',String(this.highScore));}catch(e){}}
       this.camera.update(dt,this.player,this.w,this.h);this.shake=Math.max(0,this.shake-18*dt);this.input.endFrame();
     }
     drawBackground(){
@@ -489,8 +562,7 @@
       c.textAlign='left';c.fillStyle='#fff';c.font='900 17px system-ui';c.fillText(`SCORE  ${String(this.score).padStart(6,'0')}`,22,174);c.fillStyle='rgba(220,250,255,.65)';c.font='700 11px system-ui';c.fillText(`BEST  ${String(this.highScore).padStart(6,'0')}`,22,192);
       const state=this.player.flying?'ON':'OFF',speedState=this.player.boosting?'ON':this.player.speedEnergy<99?'RECHARGING':'READY';c.fillStyle=this.player.flying?'#6ef5ff':'rgba(220,235,245,.62)';c.font='900 14px system-ui';c.fillText(`FLIGHT: ${state}`,22,219);c.fillStyle=this.player.boosting?'#ffe76a':this.player.speedEnergy<18?'#ff7893':'rgba(220,235,245,.62)';c.fillText(`SUPER SPEED: ${speedState}`,22,240);
       c.textAlign='center';c.fillStyle='#fff';c.font='800 14px system-ui';c.fillText('OBJECTIVE: DEFEAT ALL HOSTILES',this.w/2,31);c.fillStyle='#72efff';c.font='900 18px system-ui';c.fillText(`ENEMIES REMAINING: ${this.enemies.length}`,this.w/2,55);
-      if(this.intro>0&&!this.player.dead){const a=clamp(this.intro<1?this.intro:1,0,1);c.globalAlpha=a;c.fillStyle='rgba(3,12,28,.7)';roundedRect(c,this.w/2-210,this.h*.68,420,66,12);c.fill();c.fillStyle='#86f4ff';c.font='900 22px system-ui';c.fillText('ASTRA VANGUARD',this.w/2,this.h*.68+27);c.fillStyle='#e9fcff';c.font='600 13px system-ui';c.fillText('Protect Meridian City. Press F to take flight.',this.w/2,this.h*.68+49);c.globalAlpha=1;}
-      if(this.paused)this.overlay('PAUSED','Press Esc to resume','#7cefff');
+      if(this.intro>0&&!this.player.dead){const a=clamp(this.intro<1?this.intro:1,0,1);c.globalAlpha=a;c.fillStyle='rgba(3,12,28,.7)';roundedRect(c,this.w/2-210,this.h*.68,420,66,12);c.fill();c.fillStyle='#86f4ff';c.font='900 22px system-ui';c.fillText('MASTRA VANGUARD',this.w/2,this.h*.68+27);c.fillStyle='#e9fcff';c.font='600 13px system-ui';c.fillText('Protect Meridian City. Press F to take flight.',this.w/2,this.h*.68+49);c.globalAlpha=1;}
       if(this.player.dead)this.overlay('YOU DIED','Press R to Restart','#ff5575');
       if(this.victory)this.overlay('CITY SECURED','Press R to play again','#70f6d1');c.restore();
     }
@@ -500,9 +572,19 @@
   }
 
   const canvas=document.getElementById('game'),game=new Game(canvas);
-  document.getElementById('mute').addEventListener('click',e=>{game.audio.muted=!game.audio.muted;e.currentTarget.textContent=`SOUND: ${game.audio.muted?'OFF':'ON'}`;game.audio.unlock();});
+  const pauseMenu=document.getElementById('pauseMenu'),muteButton=document.getElementById('mute'),pauseMuteButton=document.getElementById('pauseMute'),musicVolume=document.getElementById('musicVolume'),sfxVolume=document.getElementById('sfxVolume');
+  const updateAudioLabels=()=>{document.getElementById('musicValue').textContent=`${Math.round(game.audio.musicVolume*100)}%`;document.getElementById('sfxValue').textContent=`${Math.round(game.audio.sfxVolume*100)}%`;};
+  function syncPauseMenu(){const open=game.paused;pauseMenu.classList.toggle('is-open',open);pauseMenu.setAttribute('aria-hidden',String(!open));pauseMuteButton.textContent=game.audio.muted?'UNMUTE ALL AUDIO':'MUTE ALL AUDIO';muteButton.textContent=`SOUND: ${game.audio.muted?'OFF':'ON'}`;updateAudioLabels();}
+  muteButton.addEventListener('click',()=>{game.audio.unlock();game.audio.toggleMuted();syncPauseMenu();});
+  pauseMuteButton.addEventListener('click',()=>{game.audio.unlock();game.audio.toggleMuted();syncPauseMenu();});
+  musicVolume.addEventListener('input',e=>{game.audio.setMusicVolume(e.target.value);updateAudioLabels();});
+  sfxVolume.addEventListener('input',e=>{game.audio.setSfxVolume(e.target.value);updateAudioLabels();});
+  document.getElementById('resumeGame').addEventListener('click',()=>{game.audio.unlock();game.setPaused(false);});
+  document.getElementById('restartGame').addEventListener('click',()=>{game.audio.unlock();game.reset();game.audio.resumeMusic();syncPauseMenu();});
   document.getElementById('fullscreen').addEventListener('click',()=>{if(!document.fullscreenElement)document.documentElement.requestFullscreen?.();else document.exitFullscreen?.();});
   addEventListener('pointerdown',()=>game.audio.unlock(),{once:true});
+  addEventListener('keydown',()=>game.audio.unlock(),{once:true});
+  syncPauseMenu(game);
   requestAnimationFrame(t=>{game.last=t;game.loop(t);});
   </script>
 </body>

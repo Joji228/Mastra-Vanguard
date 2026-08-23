@@ -1,14 +1,18 @@
-# Astra Vanguard — GPT 5.6 SOL Web Game Benchmark
+# Mastra Vanguard
 
-**A zero-dependency browser-game benchmark created with GPT 5.6 SOL to evaluate an AI model's ability to turn a single detailed prompt into a complete, polished, playable web experience.**
+**Mastra Vanguard is a living 2D superhero action-platformer built as a long-term creative project with Codex and GPT-5.6. Every update deepens the combat, movement, art direction, and world of Meridian City.**
 
-## [▶ Play Astra Vanguard Online](https://joji228.github.io/astra-vanguard-gpt-5-6-sol-xhigh/)
+## [▶ Play Mastra Vanguard Online](https://joji228.github.io/Mastra-Vanguard/)
 
-No download or installation is required. Open the link in a modern desktop browser and play immediately.
+No installation is required. Open the link in a modern desktop browser and play immediately.
 
-Astra Vanguard is an original 2D superhero action-platformer rendered with the HTML5 Canvas API. This long-term fork keeps the game runtime in one `index.html` file and adds a small set of local, generated character assets under `assets/sprites/`. It still runs by opening `index.html` in a modern desktop browser—no server, package manager, build step, external library, or installation is required.
+Mastra Vanguard is an original HTML5 Canvas action-platformer. You play as Astra, protecting Meridian City from shock troopers and prism drones with flight, super speed, and a hand-fired prism beam. The game uses local assets, runs from a single `index.html` file, and needs no build step or external runtime dependencies.
 
-## Long-term fork upgrades
+## Long-term development
+
+This repository is the home for an ongoing game, not a one-off demo. Codex and GPT-5.6 are development partners in a continuing process of improving gameplay, visuals, animation, sound, balance, and the wider world. The ambition is simple: make Mastra Vanguard more expressive, polished, and fun with every playable release.
+
+## Current highlights
 
 - High-detail transparent artwork for Astra, shock troopers, and prism hunter drones
 - Procedural fallback rendering if a sprite is unavailable
@@ -29,34 +33,9 @@ Astra Vanguard is an original 2D superhero action-platformer rendered with the H
 - Prism beams pass through building scenery while enemies and destructible crates still intercept shots
 - Flight energy recharges 25% faster whenever Astra is not flying, and every enemy defeat restores 10% of the full meter
 - Distance-synchronized Shift sprinting for Astra and animated alternating charge footfalls for shock troopers
+- Looping Meridian City background OST with independent music/SFX volume controls and a full pause-menu mixer
 
-## Benchmark provenance
-
-| Field | Value |
-| --- | --- |
-| Model | GPT 5.6 SOL |
-| Environment | Codex desktop |
-| Generation date | August 17, 2026 |
-| Input | One detailed natural-language specification |
-| Primary output | One self-contained `index.html` |
-| External runtime dependencies | None |
-
-The complete model-neutral specification is available in [`BENCHMARK_PROMPT.md`](BENCHMARK_PROMPT.md). This repository is intended as a reproducible artifact for comparing AI models on end-to-end web game development—not merely code completion.
-
-## What the benchmark exercises
-
-- Long-form instruction following and requirement coverage
-- JavaScript architecture within a single-file constraint
-- Delta-time game loops and responsive input handling
-- Ground movement, flight physics, energy management, and collision resolution
-- Camera-aware mouse aiming and instant-hit beam combat
-- Ground and flying enemy behavior
-- Health, damage, invulnerability, scoring, victory, death, pause, and restart states
-- Procedural Canvas art, animation, particles, parallax, HUD, and Web Audio effects
-- Responsive rendering and device-pixel-ratio handling
-- Delivery of a complete playable artifact without external assets
-
-## Run the game
+## Run locally
 
 1. Download or clone this repository.
 2. Open `index.html` in a modern desktop browser.
@@ -74,14 +53,6 @@ The complete model-neutral specification is available in [`BENCHMARK_PROMPT.md`]
 | `Esc` | Pause / resume |
 | `R` | Restart after death or victory |
 
-## Suggested evaluation dimensions
+## Project notes
 
-When using the prompt with another model, consider scoring:
-
-1. **Completeness** — How many explicit requirements are implemented?
-2. **Playability** — Does the result work immediately and feel coherent?
-3. **Correctness** — Are camera transforms, collisions, timing, restart logic, and state transitions reliable?
-4. **Game feel** — Are movement, flight, combat, feedback, and balance enjoyable?
-5. **Visual polish** — Does procedural presentation feel intentional and readable?
-6. **Code quality** — Is the single-file implementation organized and maintainable?
-7. **Constraint adherence** — Is the result truly offline, original, and dependency-free?
+The original model-neutral design brief remains available in [`BENCHMARK_PROMPT.md`](BENCHMARK_PROMPT.md) as part of the project's history. Mastra Vanguard has since become its own long-term game project, with its direction shaped through continued iteration in Codex and GPT-5.6.
