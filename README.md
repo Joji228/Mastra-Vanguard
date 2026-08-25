@@ -18,6 +18,8 @@ This is a long-term creative game project developed with Codex and GPT-5.6.
 
 Open `index.html` in a modern desktop browser. No install or build step is needed.
 
+Run `node tools/smoke-test.mjs` for the gameplay smoke tests.
+
 ## Controls
 
 | Input | Action |
