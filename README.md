@@ -6,6 +6,13 @@ Mastra Vanguard is a 2D superhero action-platformer spanning Meridian City and a
 
 This is a long-term creative game project developed with Codex and GPT-5.6.
 
+## Version 0.3 highlights
+
+- New Astral Devourer model and animations
+- Smoother Stage 2 enemy movement
+- Fixed wall and ledge stalls
+- Rebalanced minion and boss combat
+
 ## Version 0.2 highlights
 
 - New alien-world Stage 2
