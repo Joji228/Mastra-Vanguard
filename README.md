@@ -1,6 +1,6 @@
 # Mastra Vanguard
 
-<h2><a href="https://joji228.github.io/Mastra-Vanguard/">▶ Play online</a></h2>
+<h2><a href="https://joji228.github.io/Mastra-Vanguard/">▶ Click here to play Mastra Vanguard</a></h2>
 
 Mastra Vanguard is a 2D superhero action-platformer set in Meridian City. Play as Astra: fly, sprint at super speed, fire prism beams, and defeat the Prism Warden.
 
