@@ -50,9 +50,9 @@ const sandbox={
 };
 sandbox.window=sandbox; sandbox.globalThis=sandbox;
 vm.createContext(sandbox);
-vm.runInContext(`${script}\n;globalThis.__test={CFG,AudioFX,PrismWarden,Player,GroundEnemy,game};`,sandbox,{filename:'index.html'});
+vm.runInContext(`${script}\n;globalThis.__test={CFG,STAGE2,AudioFX,PrismWarden,Player,GroundEnemy,Stage2Hero,CrystalStalker,SporeDrone,AstralDevourer,game};`,sandbox,{filename:'index.html'});
 
-const {CFG,AudioFX,PrismWarden,GroundEnemy,game}=sandbox.__test;
+const {CFG,STAGE2,AudioFX,PrismWarden,Player,GroundEnemy,Stage2Hero,CrystalStalker,SporeDrone,AstralDevourer,game}=sandbox.__test;
 game.audio.muted=true;
 
 assert.equal(CFG.ultimateMaxCharges,3);
@@ -93,5 +93,19 @@ game.particles.length=0;game.burst(0,0,'#fff',Number.MAX_SAFE_INTEGER,100);asser
 
 game.audio.setMusicVolume(.23);game.audio.setSfxVolume(.41);game.audio.setMuted(true);
 const restoredAudio=new AudioFX();assert.equal(restoredAudio.musicVolume,.23);assert.equal(restoredAudio.sfxVolume,.41);assert.equal(restoredAudio.muted,true);
+
+game.mode='stage2';game.started=true;game.audio.muted=true;game.resetStage2();
+assert.equal(STAGE2.worldW,6400);assert.equal(game.stage2Platforms.length,13);assert.equal(game.stage2Enemies.length,10);assert(game.stage2Hero instanceof Stage2Hero);assert(game.stage2Hero instanceof Player,'Stage Two must use the same Astra character system');assert.equal(game.stage2Hero.w,CFG.playerW);assert.equal(game.stage2Hero.ultimateCharges,CFG.ultimateMaxCharges);assert(game.stage2Enemies.some(enemy=>enemy instanceof CrystalStalker));assert(game.stage2Enemies.some(enemy=>enemy instanceof SporeDrone));
+assert(game.stage2Platforms.some(platform=>platform.x<=game.stage2ArenaLeft&&platform.x+platform.w>=STAGE2.worldW&&platform.y===1450),'boss arena must have one continuous floor');
+for(const asset of ['stage2-crystal-stalker-frames-v1.png','stage2-spore-drone-frames-v1.png','stage2-astral-devourer-frames-v1.png']){const png=fs.readFileSync(path.join(root,'assets','sprites',asset));assert.equal(png[25],6,`${asset} must retain PNG alpha transparency`);}
+const stage2Target=game.stage2Enemies[0],stage2SecondTarget=game.stage2Enemies[1],stage2Origin=game.stage2Hero.beamOrigin(),stage2TargetHp=stage2Target.hp,stage2SecondTargetHp=stage2SecondTarget.hp;stage2Target.x=stage2Origin.x+280;stage2Target.y=stage2Origin.y-stage2Target.h/2;stage2SecondTarget.x=stage2Origin.x+610;stage2SecondTarget.y=stage2Origin.y-stage2SecondTarget.h/2;game.input.mouse.x=stage2Target.x+stage2Target.w/2-game.camera.x;game.input.mouse.y=stage2Target.y+stage2Target.h/2-game.camera.y;game.input.mouse.down=true;game.stage2Hero.update(.016,game);assert(game.stage2HeatVision,'holding the primary beam must create continuous heat vision');assert.equal(game.stage2Beams.length,0,'held heat vision must not create repeated projectile shots');assert(Math.hypot(game.stage2HeatVision.ex-game.stage2HeatVision.x,game.stage2HeatVision.ey-game.stage2HeatVision.y)>=STAGE2.heatVisionRange*.99,'heat vision must extend past the visible map');assert(stage2Target.hp<stage2TargetHp,'continuous heat vision must damage its first target');assert(stage2SecondTarget.hp<stage2SecondTargetHp,'heat vision must pierce targets instead of stopping at the first one');game.input.mouse.down=false;game.input.clear();
+const stage2Charges=game.stage2Hero.ultimateCharges;game.stage2Hero.castUltimate(game);assert.equal(game.stage2Hero.ultimateCharges,stage2Charges-1,'Stage Two must retain Prism Nova');assert(game.stage2Waves.length>0);
+game.draw();game.update(.016);assert.equal(game.stage2Encounter,'clear-hostiles');
+game.stage2Enemies.length=0;game.stage2Hero.x=5200;game.update(.016);assert.equal(game.stage2Encounter,'boss-intro');assert(game.stage2Boss instanceof AstralDevourer);
+game.stage2Timer=0;game.update(.016);assert.equal(game.stage2Encounter,'boss-fight');game.stage2Boss.hit(100,game);assert(game.stage2Boss.hp<game.stage2Boss.maxHp);
+game.stage2Hero.x=game.stage2ArenaLeft-100;game.update(.016);assert(game.stage2Hero.x>=game.stage2ArenaLeft+18,'boss barrier must lock behind Astra');
+game.stage2Boss.slamX=5500;game.stage2Boss.setState('slam-windup',0);game.stage2Boss.update(.016,game);assert.equal(game.stage2Boss.state,'slam-drop');game.stage2Boss.y=game.stage2Boss.arenaFloor-game.stage2Boss.h+2;game.stage2Boss.vy=200;game.stage2Boss.update(.016,game);assert.equal(game.stage2Boss.state,'slam-impact');assert(game.stage2Shockwaves.length>=2,'boss slam must emit ground shockwaves');
+
+game.mode='classic';game.reset();assert(game.player instanceof Player);assert.equal(game.encounterState,'clear-hostiles');
 
 console.log('Mastra Vanguard smoke tests: PASS');

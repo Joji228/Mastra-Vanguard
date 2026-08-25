@@ -2,9 +2,16 @@
 
 <h2><a href="https://joji228.github.io/Mastra-Vanguard/">▶ Click here to play Mastra Vanguard</a></h2>
 
-Mastra Vanguard is a 2D superhero action-platformer set in Meridian City. Play as Astra: fly, sprint at super speed, fire prism beams, and defeat the Prism Warden.
+Mastra Vanguard is a 2D superhero action-platformer spanning Meridian City and a hostile alien world. Play as Astra: fly, sprint at super speed, and unleash powerful prism abilities.
 
 This is a long-term creative game project developed with Codex and GPT-5.6.
+
+## Version 0.2 highlights
+
+- New alien-world Stage 2
+- Animated alien enemies and scenery
+- Three-phase Astral Devourer boss
+- Continuous piercing heat vision
 
 ## Version 0.1 highlights
 
