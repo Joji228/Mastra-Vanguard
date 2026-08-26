@@ -6,6 +6,13 @@ Mastra Vanguard is a 2D superhero action-platformer spanning Meridian City and a
 
 This is a long-term creative game project developed with Codex and GPT-5.6.
 
+## Version 0.4 highlights
+
+- Power Launch and dedicated vertical-flight poses
+- Upgraded walk, sprint, and wind-flowing idle animation
+- Full-range piercing Super Beam in both stages
+- Refined boss effects, combat, hitboxes, and movement
+
 ## Version 0.3 highlights
 
 - New Astral Devourer model and animations
@@ -42,6 +49,7 @@ Run `node tools/smoke-test.mjs` for the gameplay smoke tests.
 | `W` / `S` | Jump, ascend, or descend |
 | `F` | Toggle flight |
 | Hold `Shift` | Super speed |
+| `Shift` + `W` | Power Launch |
 | Click | Fire prism beam |
 | Hold then release `Space` | Super Beam |
 | `V` | Prism Nova |
