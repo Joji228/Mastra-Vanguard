@@ -6,6 +6,12 @@ Mastra Vanguard is a 2D superhero action-platformer spanning Meridian City and a
 
 This is a long-term creative game project developed with Codex and GPT-5.6.
 
+## Version 0.5 highlights
+
+- New Stage 3: Eclipse Foundry
+- Unique Solar Legionnaire, Flux Manta, Forge Weaver, and Heliarch Zero boss
+- New map art, enemy/boss visuals, VFX, and polished Stage 3 combat
+
 ## Version 0.4 highlights
 
 - Power Launch and dedicated vertical-flight poses
