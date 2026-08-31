@@ -6,6 +6,12 @@ Mastra Vanguard is a 2D superhero action-platformer spanning Meridian City and a
 
 This is a long-term creative game project developed with Codex and GPT-5.6.
 
+## Version 0.6 highlights
+
+- Global God Mode toggle with unlimited Prism Nova charges
+- 50% larger Prism Nova range
+- Stage 1 naming and Greek/English keyboard layout support
+
 ## Version 0.5 highlights
 
 - New Stage 3: Eclipse Foundry
@@ -35,8 +41,8 @@ This is a long-term creative game project developed with Codex and GPT-5.6.
 
 ## Version 0.1 highlights
 
-- Stage One campaign and Prism Warden boss fight
-- Classic Mode and God Mode
+- Stage 1 campaign and Prism Warden boss fight
+- Stage 1 and God Mode
 - Flight, Shift super speed, Super Beam, and Prism Nova ultimate
 - Animated Astra, shock troopers, drones, boss, and city scenery
 - Original Meridian City art, music, sound effects, and pause-menu audio controls
