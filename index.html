@@ -196,9 +196,6 @@
   const overlap = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
   const overlapRect = (x, y, w, h, target) => x < target.x + target.w && x + w > target.x && y < target.y + target.h && y + h > target.y;
   const dist2 = (ax, ay, bx, by) => (ax - bx) ** 2 + (ay - by) ** 2;
-  // Physical codes keep controls stable when the OS keyboard layout changes (for example English ↔ Greek).
-  const KEY_BY_CODE = Object.freeze({KeyA:'a',KeyD:'d',KeyW:'w',KeyS:'s',KeyF:'f',KeyR:'r',KeyV:'v',Space:' ',ShiftLeft:'shift',ShiftRight:'shift',Escape:'escape',ArrowUp:'arrowup',ArrowDown:'arrowdown',ArrowLeft:'arrowleft',ArrowRight:'arrowright'});
-  const normalizeKey = event => { const mapped=KEY_BY_CODE[event.code]; if(mapped)return mapped; const key=String(event.key||'').toLowerCase(); return key==='esc'?'escape':key; };
   const BLOCKED_KEYS = new Set(['w','a','s','d','f','r','v',' ','shift','escape','arrowup','arrowdown','arrowleft','arrowright']);
   const BOSS_ARENA_STATES = new Set(['boss-intro','boss-fight','boss-defeated']);
   const BOSS_BARRIER_DASH = Object.freeze([20,12]);
@@ -343,14 +340,14 @@
     constructor(canvas) {
       this.keys = new Set(); this.pressed = new Set(); this.released = new Set(); this.mouse = { x: 0, y: 0, down: false, pressed: false };
       addEventListener('keydown', e => {
-        const k = normalizeKey(e);
+        const k = e.key.toLowerCase();
         if(isInteractiveTarget(e.target)&&k!=='escape')return;
         if (e.shiftKey) { if (!this.keys.has('shift')) this.pressed.add('shift'); this.keys.add('shift'); }
         if (!this.keys.has(k)) this.pressed.add(k);
         this.keys.add(k);
         if (BLOCKED_KEYS.has(k)) e.preventDefault();
       });
-      addEventListener('keyup', e => { const k=normalizeKey(e); this.keys.delete(k); this.released.add(k); });
+      addEventListener('keyup', e => { const k=e.key.toLowerCase(); this.keys.delete(k); this.released.add(k); });
       addEventListener('blur', () => { this.keys.clear(); this.pressed.clear(); this.released.clear(); this.mouse.down = false; this.mouse.pressed = false; });
       const setMouse = e => { this.mouse.x=e.offsetX;this.mouse.y=e.offsetY; };
       canvas.addEventListener('mousemove', setMouse);

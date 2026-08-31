@@ -60,15 +60,14 @@ const sandbox={
 };
 sandbox.window=sandbox; sandbox.globalThis=sandbox;
 vm.createContext(sandbox);
-vm.runInContext(`${script}\n;globalThis.__test={CFG,STAGE2,STAGE3,SPRITES,AudioFX,PrismWarden,Player,GroundEnemy,Stage2Hero,CrystalStalker,SporeDrone,AstralDevourer,Stage3Hero,Stage3Platform,Stage3Projectile,Stage3Shockwave,FoundryHazard,HeliarchSweep,SolarLegionnaire,FluxManta,ForgeWeaver,HeliarchZero,rayRect,normalizeKey,game};`,sandbox,{filename:'index.html'});
+vm.runInContext(`${script}\n;globalThis.__test={CFG,STAGE2,STAGE3,SPRITES,AudioFX,PrismWarden,Player,GroundEnemy,Stage2Hero,CrystalStalker,SporeDrone,AstralDevourer,Stage3Hero,Stage3Platform,Stage3Projectile,Stage3Shockwave,FoundryHazard,HeliarchSweep,SolarLegionnaire,FluxManta,ForgeWeaver,HeliarchZero,rayRect,game};`,sandbox,{filename:'index.html'});
 
-const {CFG,STAGE2,STAGE3,SPRITES,AudioFX,PrismWarden,Player,GroundEnemy,Stage2Hero,CrystalStalker,SporeDrone,AstralDevourer,Stage3Hero,Stage3Platform,Stage3Projectile,Stage3Shockwave,FoundryHazard,HeliarchSweep,SolarLegionnaire,FluxManta,ForgeWeaver,HeliarchZero,rayRect,normalizeKey,game}=sandbox.__test;
+const {CFG,STAGE2,STAGE3,SPRITES,AudioFX,PrismWarden,Player,GroundEnemy,Stage2Hero,CrystalStalker,SporeDrone,AstralDevourer,Stage3Hero,Stage3Platform,Stage3Projectile,Stage3Shockwave,FoundryHazard,HeliarchSweep,SolarLegionnaire,FluxManta,ForgeWeaver,HeliarchZero,rayRect,game}=sandbox.__test;
 const markSpriteLoaded=image=>Object.assign(image,{complete:true,naturalWidth:1536,naturalHeight:1024,width:1536,height:1024});
 game.audio.muted=true;
 
 assert(!html.includes('desynchronized:true'),'the shared canvas must use synchronized presentation so the HUD cannot tear or flicker');
 assert(!/urgent&&Math\.floor\(performance\.now\(\)\/180\)/.test(html),'low-resource HUD bars must use a steady warning treatment instead of flashing');
-assert.equal(normalizeKey({code:'KeyA',key:'α'}),'a','physical A must remain mapped under the Greek keyboard layout');assert.equal(normalizeKey({code:'KeyW',key:'ς'}),'w','physical W must remain mapped under the Greek keyboard layout');assert.equal(normalizeKey({code:'KeyF',key:'φ'}),'f','physical F must remain mapped under the Greek keyboard layout');
 assert.equal(CFG.ultimateMaxCharges,3);
 assert.equal(CFG.ultimateRadius,660);
 assert(/id="classicMode"[\s\S]*?<h2>STAGE 1<\/h2>/.test(html),'the original campaign must be labeled Stage 1 in the player-facing menu');

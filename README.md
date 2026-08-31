@@ -10,7 +10,7 @@ This is a long-term creative game project developed with Codex and GPT-5.6.
 
 - Global God Mode toggle with unlimited Prism Nova charges
 - 50% larger Prism Nova range
-- Stage 1 naming and Greek/English keyboard layout support
+- Stage 1 naming and menu polish
 
 ## Version 0.5 highlights
 
