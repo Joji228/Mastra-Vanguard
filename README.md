@@ -2,9 +2,15 @@
 
 <h2><a href="https://joji228.github.io/Mastra-Vanguard/">▶ Click here to play Mastra Vanguard</a></h2>
 
-Mastra Vanguard is a 2D superhero action-platformer spanning Meridian City and a hostile alien world. Play as Astra: fly, sprint at super speed, and unleash powerful prism abilities.
+Mastra Vanguard is a three-stage 2D superhero action-platformer spanning Meridian City, an alien planet, and the Eclipse Foundry. Play as Astra: fly, sprint at super speed, and unleash powerful prism abilities.
 
 This is a long-term creative game project developed with Codex and GPT-5.6.
+
+## Version 0.7 highlights
+
+- Smoother movement, stronger Sonic Boom, and clearer boss attacks
+- Faster stage loading, lighter effects, and accessibility settings
+- Mission results and fixes across all three stages
 
 ## Version 0.6 highlights
 
@@ -53,6 +59,8 @@ Open `index.html` in a modern desktop browser. No install or build step is neede
 
 Run `node tools/smoke-test.mjs` for the gameplay smoke tests.
 
+Optional browser QA: `node tools/browser-audit.mjs` with an existing Playwright installation. Set `PLAYWRIGHT_MODULE` to its module directory and `BROWSER_PATH` to a Chrome/Chromium executable if needed. Reports and screenshots go to the ignored `artifacts/browser-audit/` directory. No browser-test dependency is required to play.
+
 ## Controls
 
 | Input | Action |
@@ -67,5 +75,7 @@ Run `node tools/smoke-test.mjs` for the gameplay smoke tests.
 | `V` | Prism Nova |
 | `Esc` | Pause |
 | `R` | Restart |
+
+Open **Settings** from the main menu or pause with `Esc` to adjust audio and visual preferences. AUTO effects reduce cosmetic work after sustained slow rendering; all quality levels preserve attack warnings. Reduced-motion system preferences supply the initial accessibility defaults. `R` restarts after defeat/completion; use the pause menu to restart an active mission.
 
 Project history and the original design brief: [`BENCHMARK_PROMPT.md`](BENCHMARK_PROMPT.md).

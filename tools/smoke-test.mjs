@@ -63,6 +63,7 @@ vm.createContext(sandbox);
 vm.runInContext(`${script}\n;globalThis.__test={CFG,STAGE2,STAGE3,SPRITES,AudioFX,PrismWarden,Player,GroundEnemy,Stage2Hero,CrystalStalker,SporeDrone,AstralDevourer,Stage3Hero,Stage3Platform,Stage3Projectile,Stage3Shockwave,FoundryHazard,HeliarchSweep,SolarLegionnaire,FluxManta,ForgeWeaver,HeliarchZero,rayRect,game};`,sandbox,{filename:'index.html'});
 
 const {CFG,STAGE2,STAGE3,SPRITES,AudioFX,PrismWarden,Player,GroundEnemy,Stage2Hero,CrystalStalker,SporeDrone,AstralDevourer,Stage3Hero,Stage3Platform,Stage3Projectile,Stage3Shockwave,FoundryHazard,HeliarchSweep,SolarLegionnaire,FluxManta,ForgeWeaver,HeliarchZero,rayRect,game}=sandbox.__test;
+const {SIM_STEP,DisplaySettings,Stage2Platform,Particle,HostileProjectile,stageAssets,readySprite,interpolateRenderBody,restoreRenderBody}=vm.runInContext('({SIM_STEP,DisplaySettings,Stage2Platform,Particle,HostileProjectile,stageAssets,readySprite,interpolateRenderBody,restoreRenderBody})',sandbox);
 const markSpriteLoaded=image=>Object.assign(image,{complete:true,naturalWidth:1536,naturalHeight:1024,width:1536,height:1024});
 game.audio.muted=true;
 
@@ -208,4 +209,112 @@ for(const mode of ['stage2','stage3']){game.startMode(mode);const hero=game.acti
 
 game.mode='classic';game.reset();assert(game.player instanceof Player);assert.equal(game.encounterState,'clear-hostiles');
 
-console.log('Mastra Vanguard smoke tests: PASS');
+// Production audit regressions: deterministic timing, shared systems, loading and accessibility.
+assert.equal(Stage2Hero.prototype.update,Player.prototype.update,'Stage 2 must not maintain a duplicate movement implementation');
+assert.equal(Stage2Hero.prototype.castUltimate,Player.prototype.castUltimate,'Nova must be shared across every stage');
+assert.equal(SIM_STEP,1/120,'simulation should run at 120 Hz independently of rendering');
+for(const mode of ['classic','stage2','stage3']){
+  for(const scenario of ['run','flight','boost']){
+    const outcomes=[];
+    for(const fps of [30,60,120,144]){
+      game.setGodMode(false);game.startMode(mode);game.audio.muted=true;game.activeEnemies.length=0;
+      const hero=game.activeHero;
+      if(scenario!=='run'){hero.x=1500;hero.y=500;hero.flying=true;}
+      game.input.keys.add('d');if(scenario==='boost')game.input.keys.add('shift');
+      for(let frame=0;frame<fps*2;frame++)game.advanceFrame(1/fps);
+      outcomes.push([hero.x,hero.y,hero.vx,hero.vy,hero.energy,hero.speedEnergy,hero.speedBuild,game.runStats.time]);
+    }
+    for(const outcome of outcomes)outcome.forEach((value,i)=>assert(Math.abs(value-outcomes[0][i])<1e-7,`${mode} ${scenario}: 30/60/120/144 Hz must produce the same gameplay state`));
+  }
+  game.startMode(mode);game.activeEnemies.length=0;const hero=game.activeHero;
+  hero.flying=true;hero.x=1500;hero.y=500;hero.vx=CFG.speedFlyMax;hero.speedBuild=1;game.input.keys.add('d');
+  hero.update(SIM_STEP,game);assert(hero.vx>CFG.speedFlyMax*.95,`${mode}: releasing Shift must decelerate instead of snapping to normal flight speed`);
+  hero.speedEnergy=.01;game.input.keys.add('shift');hero.update(SIM_STEP,game);assert(hero.speedExhausted);
+  hero.update(SIM_STEP,game);assert(!hero.boosting,'depleted boost must not flutter on/off each tick');
+  game.input.clear();game.restart();hero.dead=false;
+  const current=game.activeHero;current.onGround=true;current.speedEnergy=0;game.input.keys.add('shift');game.input.keys.add('w');
+  assert(!current.beginPowerLaunch(game),'Power Launch must respect speed energy as well as flight energy');
+  game.input.clear();game.setGodMode(true);current.y=game.worldConfig.worldH+100;current.invuln=0;current.update(SIM_STEP,game);
+  assert.equal(current.y,current.spawnY,`${mode}: God Mode must recover from the void`);
+  game.setGodMode(false);game.restart();current.ultimateCd=0;
+  game.activeHero.ultimateCharges=0;game.activeHero.castUltimate(game);assert.equal(game.activeHero.ultimateCharges,0,'direct Nova calls cannot create negative charges');
+}
+game.startMode('classic');game.activeEnemies.length=0;game.input.pressed.add('f');game.advanceFrame(.001);
+assert(game.input.hit('f'),'inputs must survive render frames without a simulation step');game.advanceFrame(SIM_STEP);
+assert(game.player.flying,'buffered F must execute on the next simulation step');
+const elapsedBeforePause=game.runStats.time;game.setPaused(true);game.advanceFrame(1);
+assert.equal(game.runStats.time,elapsedBeforePause,'pauses must not count toward mission time');
+game.setPaused(false);assert(game.advanceFrame(5)<=12,'long stalls must have a bounded catch-up budget');
+game.player.onGround=true;game.player.flying=false;game.player.launchCharging=true;game.player.chargingBeam=true;
+game.setPaused(true);assert(!game.player.launchCharging&&!game.player.chargingBeam,'pause must cancel charge states and clear continuous attacks');
+game.restart();
+
+// Interpolation is presentation-only and never leaks altered coordinates into collision.
+const renderedBody={x:24,y:32,simX:16,simY:24};interpolateRenderBody(renderedBody,.5);
+assert.equal(renderedBody.x,20);restoreRenderBody(renderedBody);assert.equal(renderedBody.x,24);
+const teleportedBody={x:900,y:20,simX:0,simY:0};interpolateRenderBody(teleportedBody,.5);assert.equal(teleportedBody.x,900);restoreRenderBody(teleportedBody);
+
+// Piercing beam damage and enemy response must not depend on hit-call frequency.
+for(const fps of [30,60,120,144]){
+  game.setGodMode(false);game.startMode('classic');const target=game.enemies[0];target.hp=10000;target.maxHp=10000;
+  const vx=target.vx;let feedback=0;const burst=game.burst;game.burst=()=>feedback++;
+  for(let i=0;i<fps;i++){target.hit(CFG.heatVisionDamage/fps,game);target.hitFeedbackCd=Math.max(0,(target.hitFeedbackCd||0)-1/fps);}
+  game.burst=burst;assert(Math.abs(target.hp-(10000-CFG.heatVisionDamage))<1e-7);assert.equal(target.vx,vx,'beam hits must not repeatedly multiply enemy velocity');assert(feedback<=7,'impact FX should be rate-limited');
+}
+game.startMode('classic');game.setGodMode(true);const godTarget=game.enemies[0];godTarget.hp=10000;
+game.player.x=100;game.player.y=1200;game.player.aimAngle=0;const origin=game.player.beamOrigin();godTarget.x=origin.x+220;godTarget.y=origin.y-godTarget.h/2;
+game.input.mouse.x=godTarget.x-game.camera.x;game.input.mouse.y=origin.y-game.camera.y;game.player.fireHeatVision(.1,game);
+assert(Math.abs(godTarget.hp-(10000-CFG.heatVisionDamage*.1*5))<.001,'God Mode multiplier must apply to continuous beam DPS');
+game.setGodMode(false);game.restart();const boomTarget=game.enemies[0];boomTarget.x=game.player.x+90;boomTarget.y=game.player.y;boomTarget.telegraph=.4;
+const boomHp=boomTarget.hp;assert(game.triggerSonicBoom(game.player));assert.equal(boomTarget.hp,boomHp-28);assert(boomTarget.staggerTimer>0);assert.equal(boomTarget.telegraph,0,'Sonic Boom should interrupt a minion windup');
+assert.equal(game.triggerSonicBoom(game.player),false,'Mach-threshold spam cannot repeat the combat pulse');assert.equal(boomTarget.hp,boomHp-28);
+
+// High-speed projectiles must hit when they cross Astra between two simulation samples.
+game.restart();game.player.x=500;game.player.y=400;game.player.previousX=500;game.player.previousY=400;
+const fastShot=new HostileProjectile(400,430,12000,0);fastShot.update(.02,game);
+assert(fastShot.dead&&game.player.hp<100,'swept projectile collision must prevent tunneling');
+game.restart();game.particlePool.length=0;const pooled=new Particle(0,0,0,0,.001,'#fff');game.particles=[pooled];game.updateParticles(.1);
+assert(game.particlePool.includes(pooled));game.addParticle(0,0,0,0,.5,'#abc');assert.equal(game.particles.at(-1),pooled,'expired particles must be reused');
+game.settings.quality='low';game.particles.length=0;game.burst(0,0,'#fff',10000);assert(game.particles.length<=230);
+game.settings.reducedMotion=true;game.particles.length=0;game.burst(0,0,'#fff',10000);assert(game.particles.length<=140);
+game.settings.shake=0;game.shake=100;assert.equal(game.visibleShake,0);
+game.settings.quality='high';game.settings.reducedMotion=false;game.settings.reducedFlashing=true;game.settings.save();
+const persistedDisplay=new DisplaySettings();assert.equal(persistedDisplay.shake,0);assert(persistedDisplay.reducedFlashing);
+markSpriteLoaded(SPRITES.astraIdle);game.player.onGround=true;game.player.invuln=.8;drawImageCalls=[];game.player.draw(context2d,game);assert(drawImageCalls.length>0,'reduced flashing must keep Astra visible during invulnerability');
+game.settings.reducedFlashing=false;
+
+// Stage-specific asset sets must include boss artwork without loading another planet.
+for(const [mode,prefix] of [['classic','warden'],['stage2','stage2Boss'],['stage3','stage3Boss']]){
+  const assets=stageAssets(mode);assert(assets.includes(SPRITES.astraFlight));assert(assets.includes(mode==='classic'?SPRITES.wardenIdle:SPRITES[prefix]));
+  if(mode!=='stage2')assert(!assets.includes(SPRITES.stage2Map));
+  if(mode!=='stage3')assert(!assets.includes(SPRITES.stage3Map));
+}
+const loadSuccess=new MockImage();loadSuccess.pendingSrc='success.png';loadSuccess.decode=()=>Promise.resolve();
+const readySuccess=readySprite(loadSuccess);markSpriteLoaded(loadSuccess);loadSuccess.listeners.get('load')();assert.equal(await readySuccess,true);
+const loadFailure=new MockImage();loadFailure.pendingSrc='missing.png';const readyFailure=readySprite(loadFailure);loadFailure.listeners.get('error')();assert.equal(await readyFailure,false,'failed artwork must resolve to fallback, not hang stage loading');
+
+// Sweep telegraph has no active damage; its live ray uses the same visible beam width.
+game.startMode('stage3');game.stage3Boss=new HeliarchZero(6000,800);game.stage3Encounter='boss-fight';
+const sweep=new HeliarchSweep(game.stage3Boss,0);game.stage3Hero.x=game.stage3Boss.cx+100;game.stage3Hero.y=game.stage3Boss.cy-20;
+const sweepHp=game.stage3Hero.hp;sweep.update(.1,game);assert.equal(game.stage3Hero.hp,sweepHp,'sweep warning must be harmless');
+sweep.life=sweep.active/2;sweep.update(0,game);assert(game.stage3Hero.hp<sweepHp,'active sweep must hit visible overlapping targets');
+assert(html.includes('angle=warning?this.startAngle'),'sweep warning must point toward the first active angle');
+
+// All three genuine boss-death paths show results once, preserve score, and restart cleanly.
+for(const mode of ['classic','stage2','stage3']){
+  game.setGodMode(false);game.startMode(mode);game.activeHero.invuln=999;game.activeEnemies.length=0;
+  game.activeHero.x=mode==='classic'?4200:mode==='stage2'?5300:5900;game.update(SIM_STEP);
+  assert.equal(game.activeEncounter,'boss-intro');
+  for(let i=0;i<360;i++)game.advanceFrame(SIM_STEP);
+  assert.equal(game.activeEncounter,'boss-fight');game.activeBoss.kill(game);
+  for(let i=0;i<360&&!game.victory;i++)game.advanceFrame(SIM_STEP);
+  assert(game.victory&&game.results,`${mode}: boss death must produce a completion result`);
+  const result=game.results,score=game.score;game.advanceFrame(1);assert.equal(game.results,result);assert.equal(game.score,score,'completion bonus must only be awarded once');
+  assert.equal(elements.get('resultsMenu').attributes.get('aria-hidden'),'false');
+  for(let i=0;i<8;i++){game.restart();assert.equal(game.activeEncounter,'clear-hostiles');assert.equal(game.results,null);assert.equal(game.runStats.time,0);assert(game.particlePool.length<=520);}
+  const normalKey=game.highScoreKey;game.setGodMode(true);assert.notEqual(game.highScoreKey,normalKey,'God runs must use a separate best score in every stage');
+  game.setGodMode(false);assert.notEqual(game.highScoreKey,normalKey,'turning God Mode off cannot reclassify an assisted run');
+  game.restart();assert.equal(game.highScoreKey,normalKey,'a fresh normal run restores its unassisted score category');
+}
+assert.equal(contextDepth,0,'all regression drawing must restore Canvas state');
+console.log('Mastra Vanguard smoke tests: PASS (including 30/60/120/144 Hz, all-stage results, loading, pooling and accessibility)');
