@@ -26,6 +26,28 @@ async function aimAtTarget(){
   if(!point)return false;
   await page.mouse.move(point.x,point.y);return true;
 }
+async function testPrismGuard(mode){
+  // Real Q + D input; only the incoming hit is injected to make perfect timing repeatable.
+  await page.evaluate(()=>{const hero=game.activeHero;hero.x=250;hero.y=400;hero.flying=true;hero.vx=0;hero.vy=0;hero.energy=50;hero.speedEnergy=100;hero.invuln=0;});
+  await page.keyboard.down('d');await page.keyboard.down('q');
+  await page.waitForFunction(()=>game.activeHero.guardTimer>0);
+  await check(()=>game.activeHero.speedEnergy<100,'Q must consume speed energy in a normal run');
+  await check(()=>{
+    const hero=game.activeHero,hp=hero.hp,energy=hero.energy,vx=hero.vx,vy=hero.vy;
+    hero.damage(20,-800,300,game);
+    return hero.hp===hp&&hero.energy>energy&&hero.guardPerfect&&hero.flying&&hero.vx===vx&&hero.vy===vy;
+  },'a timed guard must block damage/knockback and reward flight energy');
+  await page.waitForTimeout(70);await check(()=>game.activeHero.x>250,'guard must allow uninterrupted movement');
+  await page.keyboard.up('d');
+  // Draw a clean, frozen animation frame for visual review without waiting through the shield.
+  await page.evaluate(()=>{game.paused=true;game.draw();});
+  await page.screenshot({path:path.join(output,mode+'-prism-guard.png')});
+  await page.evaluate(()=>{game.paused=false;});
+  await page.keyboard.up('q');await page.waitForFunction(()=>game.activeHero.guardTimer===0);
+  await check(()=>{const hero=game.activeHero;hero.invuln=0;const hp=hero.hp;hero.damage(12,0,0,game);return hero.hp===hp-12;},'shield expiry must restore normal damage');
+  await page.evaluate(()=>game.restart());await page.waitForTimeout(180);
+  await check(()=>game.activeHero.guardTimer===0&&game.activeHero.guardCd===0,'restart must clear guard state');
+}
 try{
   await page.goto(url);
   assert.equal(await page.evaluate(()=>Object.values(SPRITES).filter(image=>image.src).length),0,'main menu must not eagerly load three stages');
@@ -38,6 +60,7 @@ try{
     await page.waitForFunction(()=>game.started&&!game.loading);
     await check(()=>game.assetFailures===0,'all critical stage assets should load from file://');
     await page.waitForTimeout(180);
+    await testPrismGuard(mode);
     const startX=await page.evaluate(()=>game.activeHero.x);
     await page.keyboard.down('d');await page.waitForTimeout(350);await page.keyboard.up('d');
     assert(await page.evaluate(()=>game.activeHero.x)>startX+35,'D must move Astra');

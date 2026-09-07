@@ -316,5 +316,116 @@ for(const mode of ['classic','stage2','stage3']){
   game.setGodMode(false);assert.notEqual(game.highScoreKey,normalKey,'turning God Mode off cannot reclassify an assisted run');
   game.restart();assert.equal(game.highScoreKey,normalKey,'a fresh normal run restores its unassisted score category');
 }
+// Prism Guard is a shared, edge-triggered defense, not another movement state.
+assert.equal(CFG.guardDuration,1,'Prism Guard should protect for one full second');
+const guardArt=pngAlphaStats(fs.readFileSync(path.join(root,'assets/sprites/astra-prism-guard-vfx-v1.png')),3,2);
+assert.equal(guardArt.width,1536);assert.equal(guardArt.height,1024);
+assert(guardArt.transparent>guardArt.width*guardArt.height*.35,'guard art must have real alpha, not a rectangular backdrop');
+for(const cell of guardArt.cells)assert(cell.visible>1000&&cell.transparent>1000,'each shield frame must contain artwork and transparent space');
+for(const mode of ['classic','stage2','stage3'])assert(stageAssets(mode).includes(SPRITES.astraGuard),'guard must preload in every stage');
+for(const mode of ['classic','stage2','stage3']){
+  game.setGodMode(false);game.startMode(mode);game.input.clear();
+  let hero=game.activeHero;hero.flying=true;hero.x=250;hero.y=400;hero.vx=420;hero.vy=-160;hero.energy=50;
+  const beforeX=hero.x;game.input.keys.add('q');game.input.pressed.add('q');game.advanceFrame(SIM_STEP);
+  assert.equal(hero.guardTimer,CFG.guardDuration,`${mode}: Q must activate the shared shield`);
+  assert(hero.x>beforeX&&hero.flying,`${mode}: activating a guard must not lock flight or movement`);
+  assert(Math.abs(hero.speedEnergy-(100-CFG.guardCost+CFG.speedRegen*SIM_STEP))<1e-8,'guard must use existing speed energy');
+  const velocity=[hero.vx,hero.vy],energy=hero.energy,hp=hero.hp,damage=game.runStats.damage;
+  hero.damage(20,-900,300,game);
+  assert.equal(hero.hp,hp);assert.equal(game.runStats.damage,damage);
+  assert.deepEqual([hero.vx,hero.vy],velocity,'blocked knockback must preserve momentum');assert(hero.flying);
+  assert(hero.guardPerfect);assert.equal(hero.energy,energy+CFG.maxEnergy*CFG.guardFlightRestore);
+  const rewardEnergy=hero.energy,feedbackCount=game.particles.length;
+  for(let hit=0;hit<100;hit++)hero.damage(10,0,0,game);
+  assert.equal(hero.energy,rewardEnergy,'sustained attacks cannot farm perfect-block energy');
+  assert.equal(game.particles.length,feedbackCount,'sustained attacks must throttle guard feedback');
+  assert(!hero.castPrismGuard(game),'cooldown cannot be bypassed by recasting');
+  game.setPaused(true);const frozenGuard=hero.guardTimer,frozenCd=hero.guardCd;game.advanceFrame(.5);
+  assert.equal(hero.guardTimer,frozenGuard);assert.equal(hero.guardCd,frozenCd);assert(!hero.castPrismGuard(game));game.setPaused(false);
+  hero.guardTimer=.001;hero.update(SIM_STEP,game);hero.damage(17,-320,180,game);
+  assert.equal(hero.hp,hp-17,'damage must resume after the shield expires');assert(!hero.flying);assert.equal(game.runStats.damage,damage+17);
+
+  game.restart();hero=game.activeHero;hero.speedEnergy=CFG.guardCost-.01;
+  assert(!hero.castPrismGuard(game),'insufficient speed energy must not create a free shield');assert.equal(hero.guardCd,0);
+  hero.speedEnergy=100;hero.launchCharging=true;assert(!hero.castPrismGuard(game),'launch anticipation takes priority');hero.launchCharging=false;
+  hero.dead=true;assert(!hero.castPrismGuard(game));hero.dead=false;assert(hero.castPrismGuard(game));
+  hero.energy=40;hero.guardTimer=CFG.guardDuration-CFG.guardPerfectWindow-.001;hero.damage(12,500,-100,game);
+  assert.equal(hero.energy,40,'a later block is safe but does not grant the timing reward');assert(!hero.guardPerfect);
+  hero.invuln=1;hero.y=game.worldConfig.worldH+100;hero.update(SIM_STEP,game);
+  assert(hero.dead,'guard and old hit immunity must not prevent out-of-world defeat');assert.equal(hero.guardTimer,0);
+
+  game.restart();hero=game.activeHero;game.setGodMode(true);hero.speedEnergy=0;
+  assert(hero.castPrismGuard(game),'God Mode must waive the guard energy requirement');assert.equal(hero.speedEnergy,0,'no energy is spent in God Mode');
+  assert(!hero.castPrismGuard(game),'God Mode still respects the defensive cooldown');
+  hero.energy=CFG.maxEnergy;hero.damage(10,0,0,game);assert.equal(hero.energy,CFG.maxEnergy,'perfect recovery must clamp to max energy');
+  game.setGodMode(false);game.restart();hero=game.activeHero;
+  assert.equal(hero.guardTimer,0);assert.equal(hero.guardCd,0);assert(!hero.guardPerfect);
+
+  // Releasing/restarting the primary beam must reuse scratch objects, never stale damage targets.
+  game.input.mouse.x=1000;game.input.mouse.y=300;hero.fireHeatVision(SIM_STEP,game);
+  const beam=game[hero.heatVisionKey(game)],trace=hero.beamTrace,bounds=trace.hitbox;
+  hero.clearHeatVision(game);assert.equal(game[hero.heatVisionKey(game)],null);
+  hero.fireHeatVision(SIM_STEP,game);assert.equal(game[hero.heatVisionKey(game)],beam);assert.equal(hero.beamTrace,trace);assert.equal(trace.hitbox,bounds);
+  const target=game.activeEnemies[0],scratch={};assert.equal(target.beamHitbox(scratch),scratch);
+  const oldX=scratch.x;target.x+=77;target.beamHitbox(scratch);assert.equal(scratch.x,oldX+77,'reused hitboxes must follow target motion');
+  hero.clearHeatVision(game);game.input.clear();
+
+  // Defensive input must coexist with all existing combat/flight inputs.
+  game.restart();hero=game.activeHero;hero.x=250;hero.y=400;
+  game.input.pressed.add('q');game.input.pressed.add('f');game.input.pressed.add('v');game.input.pressed.add(' ');game.input.keys.add(' ');game.input.mouse.down=true;
+  hero.update(SIM_STEP,game);game.input.endFrame();
+  assert(hero.guardTimer>0&&hero.flying&&hero.chargingBeam&&hero.ultimateCd>0&&game[hero.heatVisionKey(game)],`${mode}: guard must coexist with flight, both beams and Nova`);
+  hero.damage(20,-800,400,game);assert(hero.chargingBeam&&hero.flying,'blocked hits must preserve an ongoing Super Beam charge');
+  game.input.keys.delete(' ');game.input.released.add(' ');hero.beamCharge=.5;hero.update(SIM_STEP,game);game.input.clear();
+  assert(!hero.chargingBeam&&hero.guardTimer>0,'Super Beam release must not cancel a guard');
+  assert((game.isStage3?game.stage3Beams:game.isStage2?game.stage2Beams:game.beams).some(beam=>beam.super));
+
+  game.restart();hero=game.activeHero;hero.onGround=true;hero.castPrismGuard(game);
+  game.input.keys.add('shift');game.input.keys.add('w');hero.update(SIM_STEP,game);game.input.endFrame();
+  assert(hero.launchCharging,'guard must not prevent a valid Power Launch');
+  for(let step=0;step<75;step++)hero.update(SIM_STEP,game);
+  assert(hero.flying&&hero.vy<0,'guard must not interfere with launch release');game.input.clear();
+}
+
+// Q stays edge-triggered after the cooldown, independent of render frequency.
+for(const fps of [30,60,120,144]){
+  game.setGodMode(false);game.startMode('classic');game.activeEnemies.length=0;game.input.clear();
+  const hero=game.activeHero;game.input.keys.add('q');game.input.pressed.add('q');game.advanceFrame(1/120);
+  for(let frame=0;frame<fps*6;frame++)game.advanceFrame(1/fps);
+  assert.equal(hero.guardTimer,0,`${fps} Hz: holding Q cannot repeatedly cast`);assert.equal(hero.guardCd,0);
+  game.input.keys.delete('q');game.input.keys.add('q');game.input.pressed.add('q');game.advanceFrame(1/120);
+  assert.equal(hero.guardTimer,CFG.guardDuration,`${fps} Hz: fresh Q press must work after cooldown`);
+}
+
+// A real continuous boss sweep is blocked without changing the boss or its attack schedule.
+game.setGodMode(false);game.startMode('stage3');game.stage3Boss=new HeliarchZero(6000,800);game.stage3Encounter='boss-fight';
+const guardSweep=new HeliarchSweep(game.stage3Boss,0),guardHero=game.activeHero;
+guardHero.x=game.stage3Boss.cx+100;guardHero.y=game.stage3Boss.cy-20;guardHero.castPrismGuard(game);
+const bossState=game.stage3Boss.state,bossHP=game.stage3Boss.hp;guardSweep.life=guardSweep.active/2;guardSweep.update(0,game);
+assert.equal(guardHero.hp,CFG.maxHp);assert(guardHero.guardPerfect);assert.equal(game.stage3Boss.state,bossState);assert.equal(game.stage3Boss.hp,bossHP);
+
+// Shield is visible with fallback artwork and all accessibility/quality settings.
+for(const quality of ['high','low'])for(const reduced of [true,false]){
+  game.settings.quality=quality;game.settings.reducedMotion=reduced;game.settings.reducedFlashing=reduced;
+  let strokes=0;const previousStroke=context2d.stroke;context2d.stroke=()=>strokes++;
+  guardHero.drawPrismGuard(context2d,game);context2d.stroke=previousStroke;assert(strokes>=2,'low effects must retain the shield outline');
+}
+game.settings.reducedFlashing=false;guardHero.invuln=.8;
+let guardBlinkStrokes=0;const previousGuardStroke=context2d.stroke;context2d.stroke=()=>guardBlinkStrokes++;guardHero.draw(context2d,game);context2d.stroke=previousGuardStroke;
+assert(guardBlinkStrokes>=2,'shield must stay visible even during old damage-immunity sprite blinking');
+// Ray slab swaps must work in every direction without temporary swap arrays.
+markSpriteLoaded(SPRITES.astraGuard);game.settings.reducedMotion=false;game.settings.reducedFlashing=false;
+guardHero.invuln=0;guardHero.guardPerfect=false;guardHero.guardTimer=CFG.guardDuration-.07;drawImageCalls=[];
+guardHero.drawPrismGuard(context2d,game);assert.equal(drawImageCalls.length,2,'forming guard should crossfade adjacent generated frames');
+guardHero.guardPerfect=true;guardHero.guardTimer=.5;drawImageCalls=[];guardHero.drawPrismGuard(context2d,game);
+assert.equal(drawImageCalls.length,1,'perfect block should hold a stable dedicated sprite');
+assert.equal(drawImageCalls[0][1],512);assert.equal(drawImageCalls[0][2],512,'perfect block must use frame four');
+guardHero.guardTimer=.08;drawImageCalls=[];guardHero.drawPrismGuard(context2d,game);assert.equal(drawImageCalls.length,2,'ending guard should blend into dissolve');
+guardHero.guardTimer=0;drawImageCalls=[];guardHero.drawPrismGuard(context2d,game);assert.equal(drawImageCalls.length,0,'no protective visual may linger after protection expires');
+SPRITES.astraGuard.complete=false;
+for(const [ox,oy,dx,dy] of [[0,15,1,0],[30,15,-1,0],[15,0,0,1],[15,30,0,-1],[0,0,1,1],[30,30,-1,-1]]){
+  assert.equal(rayRect(ox,oy,dx,dy,{x:10,y:10,w:10,h:10},100),10);
+  assert.equal(rayRect(ox,oy,dx,dy,{x:10,y:10,w:10,h:10},9),null);
+}
 assert.equal(contextDepth,0,'all regression drawing must restore Canvas state');
-console.log('Mastra Vanguard smoke tests: PASS (including 30/60/120/144 Hz, all-stage results, loading, pooling and accessibility)');
+console.log('Mastra Vanguard smoke tests: PASS (including all-stage Prism Guard, 30/60/120/144 Hz, results, loading, pooling and accessibility)');

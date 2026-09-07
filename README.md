@@ -73,8 +73,11 @@ Optional browser QA: `node tools/browser-audit.mjs` with an existing Playwright 
 | Click | Fire prism beam |
 | Hold then release `Space` | Super Beam |
 | `V` | Prism Nova |
+| `Q` | Prism Guard (timed shield) |
 | `Esc` | Pause |
 | `R` | Restart |
+
+**Prism Guard:** press Q for a 1-second animated shield without interrupting movement or flight. Costs 20 speed energy, with a 5-second cooldown. Block within the first 0.2 seconds to recover 10% flight energy (once per cast). Custom sprites smoothly form, shimmer, turn gold on a perfect block, and dissolve. God Mode waives the energy cost; falling out of the map cannot be blocked.
 
 Open **Settings** from the main menu or pause with `Esc` to adjust audio and visual preferences. AUTO effects reduce cosmetic work after sustained slow rendering; all quality levels preserve attack warnings. Reduced-motion system preferences supply the initial accessibility defaults. `R` restarts after defeat/completion; use the pause menu to restart an active mission.
 
