@@ -1009,7 +1009,10 @@
       const drawLaunch=(x,baseline,alpha=1)=>{const launchFrame=this.launchCharging?Math.min(1,Math.floor(launchChargeP*2)):2;return drawSpriteFrame(ctx,SPRITES.astraPowerLaunch,launchFrame,4,1,x,baseline,116,this.facing,tilt,false,stretch,squash,alpha);};
       const drawFlightPose=(x,baseline,alpha=1,trail=false)=>{
         // Missing vertical art falls back to the sideways sheet, never an invisible hero.
-        const up=SPRITES.astraFlightUp.complete&&SPRITES.astraFlightUp.naturalWidth?this.flightUpBlend:0,down=SPRITES.astraFlightDown.complete&&SPRITES.astraFlightDown.naturalWidth?this.flightDownBlend:0,side=Math.max(0,1-up-down);
+        // Ascent owns the entire pose, even with strong sideways movement. Never
+        // overlay the horizontal body on the upward sprite during diagonal flight.
+        // The small F-toggle lift (-70) still retains its sideways hover pose.
+        const up=SPRITES.astraFlightUp.complete&&SPRITES.astraFlightUp.naturalWidth&&this.vy<-120?1:0,down=!up&&SPRITES.astraFlightDown.complete&&SPRITES.astraFlightDown.naturalWidth?this.flightDownBlend:0,side=Math.max(0,1-up-down);
         if(trail){const sprite=up>.5?SPRITES.astraFlightUp:down>.5?SPRITES.astraFlightDown:null;return sprite?drawSprite(ctx,sprite,x,baseline,116,this.facing,tilt,false,stretch,squash,alpha):drawSpriteFrame(ctx,SPRITES.astraFlight,flightFrame,2,2,x,baseline+ASTRA_FLIGHT_FRAME_Y[flightFrame],116,this.facing,tilt,false,stretch,squash,alpha);}
         let rendered=false;if(side>.001)rendered=drawFlight(x,baseline,alpha*side)||rendered;
         if(up>.001)rendered=drawSprite(ctx,SPRITES.astraFlightUp,x,baseline,116,this.facing,tilt,false,stretch,squash,alpha*up)||rendered;

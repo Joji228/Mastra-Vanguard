@@ -616,5 +616,20 @@ game.startMode('classic');const campaignEnemyCount=game.enemies.length;
 game.trainingClearEnemies();game.trainingClearBoss();game.trainingRefill();
 assert.equal(game.enemies.length,campaignEnemyCount,'inactive range controls cannot mutate the campaign');
 game.setGodMode(false);
+// Diagonal ascent must render one upward body, including Mach afterimages.
+for(const mode of ['classic','stage2','stage3','training']){
+  game.startMode(mode);const hero=game.activeHero;hero.flying=true;hero.onGround=false;
+  markSpriteLoaded(SPRITES.astraFlight);markSpriteLoaded(SPRITES.astraFlightUp);markSpriteLoaded(SPRITES.astraFlightDown);
+  for(const facing of [-1,1])for(const boosted of [false,true])for(const speed of [180,500,1600]){
+    hero.facing=facing;hero.vx=facing*speed*2;hero.vy=-speed;hero.boosting=boosted;
+    hero.flightUpBlend=.2;hero.flightDownBlend=.3;hero.updateFlightPose(SIM_STEP);
+    drawImageCalls=[];hero.draw(context2d,game);
+    assert(drawImageCalls.some(args=>args[0]===SPRITES.astraFlightUp),`${mode}: diagonal ascent uses the up sprite`);
+    assert(!drawImageCalls.some(args=>args[0]===SPRITES.astraFlight||args[0]===SPRITES.astraFlightDown),`${mode}: no overlapping sideways/down body or afterimages`);
+  }
+  SPRITES.astraFlightUp.complete=false;drawImageCalls=[];hero.draw(context2d,game);
+  assert(drawImageCalls.some(args=>args[0]===SPRITES.astraFlight),'missing upward art retains a visible fallback');
+  markSpriteLoaded(SPRITES.astraFlightUp);
+}
 assert.equal(contextDepth,0,'all regression drawing must restore Canvas state');
 console.log('Mastra Vanguard smoke tests: PASS (including all-stage Prism Guard, 30/60/120/144 Hz, results, loading, pooling, accessibility and Training Range sandbox)');
