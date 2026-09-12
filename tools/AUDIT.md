@@ -18,6 +18,13 @@ No version change or GitHub push was made for this follow-up.
 - Velocity-driven blends soften sideways/ascent/descent pose changes. Vertical Mach afterimages now match the vertical hero art, with the sideways sheet retained as a missing-art fallback.
 - Smoke regressions pass for every hero class at 30/60/120/144 Hz, including top speeds, diagonal limits, reversals, hover, pose blending, reset and sprite fallbacks. Keyboard flight checks and the complete three-stage Chrome integration audit pass without console/page errors.
 
+### Airborne shooting follow-up (version 0.8)
+
+- Added a transparent four-frame airborne shooting/cape sheet shared by all stages, with measured palm anchors, full vertical aim and matching boost afterimages. Ground shooting and beam damage/range remain unchanged.
+- Super Beam charging uses the airborne pose too. Continuous beam rendering follows the interpolated hand without changing the simulation damage trace, avoiding a detached muzzle at high speed.
+- Cape frames blend on a reused 180×128 offscreen surface, preventing the opacity dip caused by ordinary overlapping crossfades. Browser pixel checks measured chest alpha 253–254/255 through the loop.
+- Regression coverage includes true asset transparency, all three stages, both facings, vertical/diagonal aiming, every cape frame, charge poses, beam interpolation and failed-art fallback. Built-in generation prompt and asset details are beside the new sprite.
+
 ## Original version 0.7 audit
 
 Gameplay audit included in version 0.7. No new stage, mandatory dependency, or artwork replacement.

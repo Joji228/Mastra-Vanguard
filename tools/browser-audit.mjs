@@ -13,7 +13,7 @@ const output=path.join(root,'artifacts','browser-audit');
 await fs.mkdir(output,{recursive:true});
 const browser=await chromium.launch({headless:true,...(process.env.BROWSER_PATH?{executablePath:process.env.BROWSER_PATH}:{})});
 const context=await browser.newContext({viewport:{width:1280,height:800}});
-const page=await context.newPage(),errors=[],report={stages:[],errors,method:'Real Chrome, local file://, keyboard/mouse input. Enemy/boss positioning is accelerated for repeatable combat and completion checks; damage is delivered through the actual beam input.'};
+const page=await context.newPage(),errors=[],report={stages:[],errors,trainingRange:null,method:'Real Chrome, local file://, keyboard/mouse input. Enemy/boss positioning is accelerated for repeatable combat and completion checks; damage is delivered through the actual beam input.'};
 page.on('pageerror',error=>errors.push(error.message));
 page.on('console',message=>{if(message.type()==='error')errors.push(message.text());});
 const url=pathToFileURL(path.join(root,'index.html')).href;
@@ -169,6 +169,20 @@ try{
     report.stages.push({mode,results,observedBossStates:[...attackStates],restartCount:10,performanceSample});
     console.log('Browser stage PASS:',mode);
   }
+  // The Training Range is intentionally outside campaign completion. Verify its
+  // controls, mixed enemy spawns, boss preview and reset path without mutating
+  // the campaign score/progression state.
+  await page.evaluate(()=>game.returnToMainMenu());
+  await page.click('#trainingMode');await page.waitForFunction(()=>game.mode==='training'&&game.started&&!game.loading);
+  await check(()=>game.worldConfig.worldW>=18000&&game.worldConfig.worldH>=9000,'Training Range must use the expanded sandbox dimensions');
+  await page.selectOption('#trainingEnemyType','weaver');await page.selectOption('#trainingEnemyCount','3');await page.click('#trainingSpawnEnemy');
+  await check(()=>game.trainingEnemies.length===3,'Training Range must spawn selected mixed enemy targets');
+  await page.selectOption('#trainingBossType','heliarch');await page.click('#trainingSpawnBoss');await page.waitForTimeout(220);
+  await check(()=>game.trainingBossType==='heliarch'&&game.trainingBoss&&!game.victory,'Training Range boss preview must stay out of campaign victory flow');
+  await page.click('#trainingClearBoss');await page.click('#trainingReset');await page.waitForTimeout(160);
+  await check(()=>game.mode==='training'&&game.trainingEnemies.length===0&&!game.trainingBoss&&game.score===0,'Training Range reset must clear disposable sandbox state');
+  report.trainingRange={world:[await page.evaluate(()=>game.worldConfig.worldW),await page.evaluate(()=>game.worldConfig.worldH)],spawned:3,bossPreview:'heliarch',reset:true};
+  await page.evaluate(()=>game.returnToMainMenu());
   // Asset failure remains playable; this intentionally fails just one image before network I/O.
   const fallback=await context.newPage();
   await fallback.addInitScript(()=>{

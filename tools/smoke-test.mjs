@@ -60,10 +60,10 @@ const sandbox={
 };
 sandbox.window=sandbox; sandbox.globalThis=sandbox;
 vm.createContext(sandbox);
-vm.runInContext(`${script}\n;globalThis.__test={CFG,STAGE2,STAGE3,SPRITES,AudioFX,PrismWarden,Player,GroundEnemy,Stage2Hero,CrystalStalker,SporeDrone,AstralDevourer,Stage3Hero,Stage3Platform,Stage3Projectile,Stage3Shockwave,FoundryHazard,HeliarchSweep,SolarLegionnaire,FluxManta,ForgeWeaver,HeliarchZero,rayRect,game};`,sandbox,{filename:'index.html'});
+vm.runInContext(`${script}\n;globalThis.__test={CFG,STAGE2,STAGE3,TRAINING,SPRITES,AudioFX,PrismWarden,Player,GroundEnemy,Stage2Hero,CrystalStalker,SporeDrone,AstralDevourer,Stage3Hero,Stage3Platform,Stage3Projectile,Stage3Shockwave,FoundryHazard,HeliarchSweep,SolarLegionnaire,FluxManta,ForgeWeaver,HeliarchZero,rayRect,game};`,sandbox,{filename:'index.html'});
 
 const {CFG,STAGE2,STAGE3,SPRITES,AudioFX,PrismWarden,Player,GroundEnemy,Stage2Hero,CrystalStalker,SporeDrone,AstralDevourer,Stage3Hero,Stage3Platform,Stage3Projectile,Stage3Shockwave,FoundryHazard,HeliarchSweep,SolarLegionnaire,FluxManta,ForgeWeaver,HeliarchZero,rayRect,game}=sandbox.__test;
-const {SIM_STEP,DisplaySettings,Stage2Platform,Particle,HostileProjectile,stageAssets,readySprite,interpolateRenderBody,restoreRenderBody}=vm.runInContext('({SIM_STEP,DisplaySettings,Stage2Platform,Particle,HostileProjectile,stageAssets,readySprite,interpolateRenderBody,restoreRenderBody})',sandbox);
+const {SIM_STEP,TRAINING,DisplaySettings,Stage2Platform,Particle,HostileProjectile,stageAssets,readySprite,interpolateRenderBody,restoreRenderBody}=vm.runInContext('({SIM_STEP,TRAINING,DisplaySettings,Stage2Platform,Particle,HostileProjectile,stageAssets,readySprite,interpolateRenderBody,restoreRenderBody})',sandbox);
 const markSpriteLoaded=image=>Object.assign(image,{complete:true,naturalWidth:1536,naturalHeight:1024,width:1536,height:1024});
 game.audio.muted=true;
 
@@ -531,5 +531,90 @@ for(const power of ['beam','super','nova','sonic','landing','direct']){
   assert(weaver.damageable&&weaver.alpha===1&&weaver.state==='idle','Weaver must finish teleporting, not remain stuck invisible');
   weaver.hit(20,game);assert.equal(weaver.hp,hp-20,'visible Weaver must become vulnerable again');
 }
+const airShotAlpha=pngAlphaStats(fs.readFileSync(path.join(root,'assets/sprites/astra-flight-shoot-frames-v1.png')),2,2);
+assert.equal(airShotAlpha.width,1536);assert.equal(airShotAlpha.height,1024);
+assert(airShotAlpha.transparent>airShotAlpha.width*airShotAlpha.height*.4,'airborne shooting art must have actual alpha, not a checkerboard');
+for(const cell of airShotAlpha.cells)assert(cell.visible>1000&&cell.transparent>1000&&cell.edge<16,'every airborne shooting frame must have art and transparent margins without a solid border');
+const {drawHeatVision:drawFlightBeam}=vm.runInContext('({drawHeatVision})',sandbox);
+markSpriteLoaded(SPRITES.astraFlightShoot);
+markSpriteLoaded(SPRITES.astraBeam);markSpriteLoaded(SPRITES.astraAim);
+for(const mode of ['classic','stage2','stage3']){
+  game.startMode(mode);game.activeEnemies.length=0;const hero=game.activeHero;
+  hero.x=500;hero.y=500;hero.flying=true;hero.vx=900;hero.vy=350;hero.boosting=true;
+  assert(stageAssets(mode).includes(SPRITES.astraFlightShoot),'all stages must preload the new hero shooting art');
+  for(const facing of [-1,1])for(const angle of [-Math.PI/2,-.65,0,.65,Math.PI/2]){
+    hero.facing=facing;const cx=hero.x+hero.w/2,cy=hero.y+hero.h*.48,dx=facing*Math.cos(angle),dy=Math.sin(angle);
+    game.input.mouse.x=cx+dx*600-game.camera.x;game.input.mouse.y=cy+dy*600-game.camera.y;
+    const trace=hero.traceHeatVision(game);
+    assert(Math.abs(trace.dx-dx)<1e-8&&Math.abs(trace.dy-dy)<1e-8,'airborne arm and beam must follow full vertical as well as sideways aim');
+    assert(Math.abs(trace.origin.x-cx-dx*48)<1e-8&&Math.abs(trace.origin.y-cy-dy*48)<1e-8,'beam must begin at the shared flying palm anchor');
+    for(const capePhase of [0,.3,1,1.7,2,2.5,3,3.8]){
+      hero.flightCapePhase=capePhase;hero.shootAnim=.18;drawImageCalls=[];hero.draw(context2d,game);
+      assert(drawImageCalls.some(args=>args[0]===SPRITES.astraFlightShoot),'firing in flight must render the dedicated flying sprite');
+      assert(!drawImageCalls.some(args=>args[0]===SPRITES.astraBeam||args[0]===SPRITES.astraAim),'airborne firing must never switch to the ground shooting stance');
+      const hand=hero.beamOrigin();assert.equal(hand.x,trace.origin.x);assert.equal(hand.y,trace.origin.y);
+    }
+  }
+  hero.shootAnim=0;hero.chargingBeam=true;drawImageCalls=[];hero.draw(context2d,game);
+  assert(drawImageCalls.some(args=>args[0]===SPRITES.astraFlightShoot),'Super Beam charging must use the airborne shooting pose too');
+  hero.chargingBeam=false;hero.fireHeatVision(SIM_STEP,game);
+  const beam=game[hero.heatVisionKey(game)],simulationX=beam.x,oldMoveTo=context2d.moveTo,moves=[];
+  hero.x+=7;context2d.moveTo=(x,y)=>moves.push([x,y]);drawFlightBeam(context2d,beam);context2d.moveTo=oldMoveTo;
+  assert.equal(moves[0][0],hero.beamOrigin().x,'render interpolation must not detach the beam from its palm');
+  assert.equal(beam.x,simulationX,'visual interpolation must not mutate the damage trace');
+  SPRITES.astraFlightShoot.complete=false;drawImageCalls=[];hero.draw(context2d,game);
+  assert(!hero.hasFlightShotArt()&&drawImageCalls.some(args=>args[0]===SPRITES.astraAim||args[0]===SPRITES.astraBeam),'failed flight shooting art must preserve the old usable shooting fallback');
+  markSpriteLoaded(SPRITES.astraFlightShoot);
+  hero.flying=false;hero.aimAngle=0;drawImageCalls=[];hero.draw(context2d,game);
+  assert(!drawImageCalls.some(args=>args[0]===SPRITES.astraFlightShoot),'ground shooting must stay unchanged');
+}
+// Training Range is an isolated sandbox: it shares Astra and combat classes but
+// never participates in campaign progression or score persistence.
+assert(/id="trainingMode"[\s\S]*?<h2>TRAINING RANGE<\/h2>/i.test(html),'Training Range must be available as a fourth menu option');
+assert.equal(stageAssets('training').length,36,'Training Range must preload the shared hero plus all campaign preview art');
+for(const id of ['trainingHud','trainingSpawnEnemy','trainingSpawnBoss','trainingClearEnemies','trainingClearBoss','trainingRefill','trainingReset'])assert(html.includes(`id="${id}"`),`Training Range must expose ${id}`);
+game.setGodMode(false);game.startMode('training');assert(game.isTraining&&game.activeHero===game.trainingHero,'Training Range must use the shared Astra player');assert.equal(game.worldConfig.worldW,TRAINING.worldW);assert.equal(game.worldConfig.worldH,TRAINING.worldH);assert(game.trainingPlatforms.length>=8,'Training Range must initialize a large platform layout');assert.equal(game.score,0);
+for(const type of ['trooper','drone','stalker','spore','legionnaire','manta','weaver']){game.trainingEnemies.length=0;game.spawnTrainingEnemies(type,2);assert.equal(game.trainingEnemies.length,2,`${type} spawner must create two targets`);for(let i=0;i<30;i++)game.updateTraining(SIM_STEP);for(const enemy of game.trainingEnemies){assert(Number.isFinite(enemy.x)&&Number.isFinite(enemy.y)&&Number.isFinite(enemy.vx)&&Number.isFinite(enemy.vy),`${type} training target motion must stay finite`);}}
+for(const type of ['warden','devourer','heliarch']){game.spawnTrainingBoss(type,'arena');assert.equal(game.trainingBossType,type);assert.equal(game.activeBoss,game.trainingBoss);for(let i=0;i<8;i++)game.updateTraining(SIM_STEP);assert(Number.isFinite(game.trainingBoss.x)&&Number.isFinite(game.trainingBoss.y),`${type} preview boss must update in the sandbox`);game.draw();assert.equal(contextDepth,0,`${type} preview drawing must balance Canvas state`);game.trainingClearBoss();assert.equal(game.trainingBoss,null);assert.equal(game.trainingEncounter,'sandbox');}
+game.spawnTrainingEnemies('trooper',3);game.trainingClearEnemies();assert.equal(game.trainingEnemies.length,0);game.trainingRefill();assert.equal(game.trainingHero.hp,CFG.maxHp);game.trainingHero.ultimateCharges=0;game.trainingHero.energy=0;game.restart();assert(game.isTraining&&game.trainingEnemies.length===0&&game.trainingBoss===null,'Training Range reset must clear sandbox state');game.returnToMainMenu();assert.equal(document.getElementById('trainingHud').hidden,true,'returning to menu must hide Training Range controls');game.startMode('classic');assert(!game.isTraining,'campaign stages must remain separate from Training Range');
+// Range regressions: use remote/deep coordinates, not just the campaign-sized start area.
+game.setGodMode(true);game.startMode('training');
+for(const type of ['trooper','drone','stalker','spore','legionnaire','manta','weaver']){
+  game.trainingClearEnemies();const hero=game.trainingHero;hero.x=15000;hero.y=7500;hero.flying=true;
+  game.spawnTrainingEnemies(type,2);assert.equal(game.trainingEnemies.length,2);
+  for(const enemy of game.trainingEnemies){
+    assert(enemy.x>14000&&enemy.y>7000,`${type}: spawn near the player at depth`);
+    for(let i=0;i<240;i++)enemy.update(SIM_STEP,game);
+    assert(!enemy.dead&&enemy.x>13000&&enemy.y>6000,`${type}: no campaign-boundary teleport or premature death`);
+    if(type==='weaver'){enemy.relocate(game);assert(enemy.x>14000&&enemy.y>7000,'Weaver relocation must remain local');}
+  }
+}
+game.trainingClearEnemies();game.trainingHero.x=17900;
+for(let i=0;i<12;i++)game.spawnTrainingEnemies('drone',8);
+assert.equal(game.trainingEnemies.length,48,'target cap prevents unbounded combat work');
+assert(game.trainingEnemies.every(e=>e.x+e.w<=TRAINING.worldW),'right-edge spawns stay in bounds');
+game.trainingClearEnemies();
+for(const [type,floor] of [['warden',1354],['devourer',1450],['heliarch',1560]]){
+  game.spawnTrainingBoss(type);const hero=game.trainingHero,boss=game.trainingBoss;
+  assert.equal(hero.y+hero.h,floor,'hero and boss attacks share the authored floor');
+  assert(game.trainingPlatforms.some(p=>p.trainingBossFloor&&p.y===floor&&hero.x>=p.x&&hero.x+hero.w<=p.x+p.w));
+  for(const ratio of [1,.6,.25]){
+    boss.hp=boss.maxHp*ratio;
+    for(let i=0;i<1800;i++)game.updateTraining(SIM_STEP);
+    assert(Number.isFinite(boss.x)&&Number.isFinite(boss.y)&&!hero.dead,`${type}: all boss phases simulate without errors`);
+    game.draw();assert.equal(contextDepth,0);
+  }
+  hero.dead=true;hero.hp=0;game.trainingRefill();assert(!hero.dead&&hero.hp===CFG.maxHp,'refill revives a defeated hero');
+  game.burst(hero.x,hero.y,'#ffffff',8,100);game.restart();
+  assert.equal(game.particles.length,0,'restart recycles old particles');
+  assert(!game.boss&&!game.stage2Boss&&!game.stage3Boss&&!game.activeBoss,'restart removes every boss alias');
+}
+game.setPaused(true);assert(document.getElementById('trainingHud').inert,'paused range controls are inert');game.setPaused(false);
+assert(!document.getElementById('trainingHud').inert);
+assert(!game.trainingPlatforms.some(p=>p.y<8000&&p.x===0&&p.w===TRAINING.worldW),'deep range must not be sealed by a full-width upper floor');
+game.startMode('classic');const campaignEnemyCount=game.enemies.length;
+game.trainingClearEnemies();game.trainingClearBoss();game.trainingRefill();
+assert.equal(game.enemies.length,campaignEnemyCount,'inactive range controls cannot mutate the campaign');
+game.setGodMode(false);
 assert.equal(contextDepth,0,'all regression drawing must restore Canvas state');
-console.log('Mastra Vanguard smoke tests: PASS (including all-stage Prism Guard, 30/60/120/144 Hz, results, loading, pooling and accessibility)');
+console.log('Mastra Vanguard smoke tests: PASS (including all-stage Prism Guard, 30/60/120/144 Hz, results, loading, pooling, accessibility and Training Range sandbox)');

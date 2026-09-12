@@ -2,15 +2,29 @@
 
 <h2><a href="https://joji228.github.io/Mastra-Vanguard/">▶ Click here to play Mastra Vanguard</a></h2>
 
-Mastra Vanguard is a three-stage 2D superhero action-platformer spanning Meridian City, an alien planet, and the Eclipse Foundry. Play as Astra: fly, sprint at super speed, and unleash powerful prism abilities.
+Mastra Vanguard is a three-stage 2D superhero action-platformer spanning Meridian City, an alien planet, and the Eclipse Foundry. A separate Training Range sandbox is included for movement, combat and boss testing. Play as Astra: fly, sprint at super speed, and unleash powerful prism abilities.
 
 This is a long-term creative game project developed with Codex and GPT-5.6.
+
+## Version 0.8 highlights
+
+- New Training Range with enemy spawning and all three boss previews
+- Fixed range boundaries, resets, revival, and controls
+- Smoother airborne laser animations
 
 ## Version 0.7 highlights
 
 - Smoother movement, stronger Sonic Boom, and clearer boss attacks
 - Faster stage loading, lighter effects, and accessibility settings
 - Mission results and fixes across all three stages
+
+## Training Range
+
+- Large sandbox map with elevated platforms and long vertical flight space
+- Spawn every campaign enemy family, preview all three bosses, refill powers, or reset the range
+- Sandbox score and campaign progression are never saved
+- Open flight shafts connect upper decks to the deep range; nearby target spawning is capped at 48
+- Boss previews use matching combat floors; Refill Powers also revives Astra after defeat
 
 ## Version 0.6 highlights
 
@@ -80,6 +94,8 @@ Optional browser QA: `node tools/browser-audit.mjs` with an existing Playwright 
 **Prism Guard:** press Q for a 1-second animated shield without interrupting movement or flight. Costs 20 speed energy, with a 5-second cooldown. Block within the first 0.2 seconds to recover 10% flight energy (once per cast). Custom sprites smoothly form, shimmer, turn gold on a perfect block, and dissolve. God Mode waives the energy cost; falling out of the map cannot be blocked.
 
 **Flight:** hold S to dive up to 45% faster than climbing; Shift + S reaches Sonic Boom in about 0.5 seconds from a hover when energy and cooldown allow. Hold W to pull up, or release movement to brake toward a stable hover. Applies in every stage.
+
+Airborne beams use a dedicated animated flying pose, full vertical aiming and a palm-aligned laser. Ground shooting is unchanged.
 
 Open **Settings** from the main menu or pause with `Esc` to adjust audio and visual preferences. AUTO effects reduce cosmetic work after sustained slow rendering; all quality levels preserve attack warnings. Reduced-motion system preferences supply the initial accessibility defaults. `R` restarts after defeat/completion; use the pause menu to restart an active mission.
 
