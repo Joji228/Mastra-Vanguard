@@ -79,7 +79,7 @@ Optional browser QA: `node tools/browser-audit.mjs` with an existing Playwright 
 
 **Prism Guard:** press Q for a 1-second animated shield without interrupting movement or flight. Costs 20 speed energy, with a 5-second cooldown. Block within the first 0.2 seconds to recover 10% flight energy (once per cast). Custom sprites smoothly form, shimmer, turn gold on a perfect block, and dissolve. God Mode waives the energy cost; falling out of the map cannot be blocked.
 
-**Flight:** hold S to dive up to 45% faster than climbing; hold W to pull up, or release movement to brake toward a stable hover. Applies to normal and boosted flight in every stage.
+**Flight:** hold S to dive up to 45% faster than climbing; Shift + S reaches Sonic Boom in about 0.5 seconds from a hover when energy and cooldown allow. Hold W to pull up, or release movement to brake toward a stable hover. Applies in every stage.
 
 Open **Settings** from the main menu or pause with `Esc` to adjust audio and visual preferences. AUTO effects reduce cosmetic work after sustained slow rendering; all quality levels preserve attack warnings. Reduced-motion system preferences supply the initial accessibility defaults. `R` restarts after defeat/completion; use the pause menu to restart an active mission.
 

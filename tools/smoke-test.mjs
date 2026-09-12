@@ -250,6 +250,30 @@ game.mode='classic';game.reset();assert(game.player instanceof Player);assert.eq
 assert.equal(Stage2Hero.prototype.update,Player.prototype.update,'Stage 2 must not maintain a duplicate movement implementation');
 assert.equal(Stage2Hero.prototype.castUltimate,Player.prototype.castUltimate,'Nova must be shared across every stage');
 assert.equal(SIM_STEP,1/120,'simulation should run at 120 Hz independently of rendering');
+// A fresh boosted dive reaches Sonic Boom in half a second, not the normal 2.4s ramp.
+for(const mode of ['classic','stage2','stage3'])for(const fps of [30,60,120,144])for(const diagonal of [false,true]){
+  game.setGodMode(false);game.startMode(mode);game.activeEnemies.length=0;
+  const hero=game.activeHero;hero.x=60;hero.y=50;hero.flying=true;hero.onGround=false;
+  game.input.keys.add('shift');game.input.keys.add('s');if(diagonal)game.input.keys.add('d');
+  let boomTime=0;
+  for(let frame=1;frame<=fps;frame++){game.advanceFrame(1/fps);if(hero.sonicBoomTriggered){boomTime=frame/fps;break;}}
+  assert(boomTime>=.49&&boomTime<=.5+1/fps+.01,`${mode} ${fps}Hz: a fresh dive should boom at about 0.5 seconds (got ${boomTime})`);
+  assert(Math.hypot(hero.vx,hero.vy)>=1100,'fast boost build must also reach the real Sonic Boom velocity');
+  assert(hero.speedEnergy<100&&hero.energy<CFG.maxEnergy,'rapid dives must still consume both energy reserves');
+  assert(hero.sonicCooldown>2.9,'rapid dives must retain the three-second boom cooldown');
+  hero.x=60;hero.y=50;hero.vx=hero.vy=0;hero.speedBuild=0;hero.sonicBoomTriggered=false;
+  for(let frame=0;frame<Math.ceil(fps*.6);frame++)game.advanceFrame(1/fps);
+  assert(!hero.sonicBoomTriggered&&hero.sonicCooldown>0,'a second rapid dive cannot bypass the boom cooldown');
+}
+for(const mode of ['classic','stage2','stage3'])for(const scenario of ['ordinary','empty','horizontal','climbing']){
+  game.setGodMode(false);game.startMode(mode);game.activeEnemies.length=0;
+  const hero=game.activeHero;hero.x=60;hero.y=650;hero.flying=true;hero.onGround=false;
+  game.input.keys.add(scenario==='horizontal'?'d':scenario==='climbing'?'w':'s');
+  if(scenario!=='ordinary')game.input.keys.add('shift');if(scenario==='empty')hero.speedEnergy=0;
+  for(let i=0;i<66;i++)hero.update(SIM_STEP,game);
+  assert(!hero.sonicBoomTriggered,`${scenario} must not get a free rapid-dive Sonic Boom`);
+  assert(hero.speedBuild<.2,'rapid build must only apply to powered downward dives');
+}
 for(const mode of ['classic','stage2','stage3']){
   for(const scenario of ['run','flight','boost']){
     const outcomes=[];
