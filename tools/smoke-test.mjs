@@ -67,13 +67,50 @@ const {SIM_STEP,DisplaySettings,Stage2Platform,Particle,HostileProjectile,stageA
 const markSpriteLoaded=image=>Object.assign(image,{complete:true,naturalWidth:1536,naturalHeight:1024,width:1536,height:1024});
 game.audio.muted=true;
 
+// Vertical Mach afterimages must match the hero; failed vertical art retains a visible fallback.
+for(const direction of [-1,1]){
+  game.reset();const hero=game.player;hero.flying=true;hero.boosting=true;hero.vy=direction*CFG.speedFlyMax;hero.updateFlightPose(1);
+  markSpriteLoaded(SPRITES.astraFlight);markSpriteLoaded(SPRITES.astraFlightUp);markSpriteLoaded(SPRITES.astraFlightDown);
+  const sprite=direction<0?SPRITES.astraFlightUp:SPRITES.astraFlightDown;
+  drawImageCalls=[];hero.draw(context2d,game);
+  assert(drawImageCalls.filter(args=>args[0]===sprite).length>=4,'vertical Mach must use matching hero and afterimage art');
+  assert(!drawImageCalls.some(args=>args[0]===SPRITES.astraFlight),'settled vertical flight must not trail sideways hero sprites');
+  sprite.complete=false;drawImageCalls=[];hero.draw(context2d,game);
+  assert(drawImageCalls.some(args=>args[0]===SPRITES.astraFlight),'failed vertical art must fall back to the sideways flight sheet');
+  markSpriteLoaded(sprite);
+}
+game.reset();
+
 assert(!html.includes('desynchronized:true'),'the shared canvas must use synchronized presentation so the HUD cannot tear or flicker');
 assert(!/urgent&&Math\.floor\(performance\.now\(\)\/180\)/.test(html),'low-resource HUD bars must use a steady warning treatment instead of flashing');
 assert.equal(CFG.ultimateMaxCharges,3);
 assert.equal(CFG.ultimateRadius,660);
 assert.equal(CFG.flightVerticalResponse,.82,'flight vertical response must remain tuned for smooth acceleration');
-assert.equal(CFG.flightDescentResponse,1.12,'flight descent response must build speed faster while staying capped');
+assert.equal(CFG.flightDescentResponse,1.3,'gravity-assisted dives must accelerate faster than climbing');
+assert.equal(CFG.flightDiveMultiplier,1.45,'dives must have a meaningfully higher top speed than climbing');
 assert.equal(CFG.flightLandingShockwaveSpeed,1600,'landing shockwave must require true boosted-flight impact speed');
+// Shared flight envelope and pose blending: all stages, normal/Mach, all common refresh rates.
+for(const Hero of [Player,Stage2Hero,Stage3Hero])for(const fps of [30,60,120,144])for(const boosted of [false,true]){
+  const hero=new Hero(100,500),speed=boosted?CFG.speedFlyMax:CFG.flyMax,accel=boosted?CFG.speedAccel:CFG.flyAccel;
+  const fly=(x,y,seconds)=>{for(let i=0;i<Math.round(fps*seconds);i++){hero.updateFlightVelocity(1/fps,x,y,accel,speed);hero.updateFlightPose(1/fps);}};
+  hero.flying=true;fly(0,-1,2);const climb=-hero.vy;
+  assert(Math.abs(climb-speed)<.001,'upward flight must keep its existing maximum speed');
+  assert(hero.flightUpBlend>.99&&hero.flightDownBlend<.01,'sustained ascent must settle into its vertical pose');
+  hero.vx=0;hero.vy=0;fly(0,1,2);
+  assert(Math.abs(hero.vy-climb*1.45)<.001,'normal and Mach dives must be 45% faster than climbing in every stage');
+  assert(hero.flightDownBlend>.99&&hero.flightUpBlend<.01,'sustained dives must settle into the downward pose');
+  const diving=hero.vy;hero.updateFlightVelocity(1/fps,0,-1,accel,speed);
+  assert(hero.vy>0&&hero.vy<diving,'pulling up must brake a dive instead of snapping upward');
+  fly(0,-1,1.5);assert(hero.vy<0,'pulling up must regain upward motion promptly, even from maximum Mach dive');
+  hero.vx=0;hero.vy=0;fly(1,1,2);
+  assert(Math.abs(Math.hypot(hero.vx,hero.vy/CFG.flightDiveMultiplier)-speed)<.001,'diagonal dives must respect the elliptical speed envelope');
+  fly(0,0,3);assert(Math.hypot(hero.vx,hero.vy)<2,'releasing movement must brake toward powered hover');
+  assert(hero.flightUpBlend<.01&&hero.flightDownBlend<.01,'hover must return smoothly to the sideways pose');
+  hero.vx=0;hero.vy=0;fly(0,0,1);assert.equal(hero.vy,0,'gravity assist must not cause idle flight to sink');
+  hero.vy=speed;hero.updateFlightPose(1/fps);
+  assert(hero.flightDownBlend>0&&hero.flightDownBlend<.5,'a vertical pose must blend in, not pop in one frame');
+  hero.reset();assert.equal(hero.flightUpBlend,0);assert.equal(hero.flightDownBlend,0);
+}
 assert(/id="classicMode"[\s\S]*?<h2>STAGE 1<\/h2>/.test(html),'the original campaign must be labeled Stage 1 in the player-facing menu');
 for(const [asset,columns] of [['astra-walk-frames-v3.png',4],['astra-sprint-frames-v1.png',4]]){const alpha=pngAlphaStats(fs.readFileSync(path.join(root,'assets','sprites',asset)),columns,2),pixels=alpha.width*alpha.height;assert(alpha.transparent>pixels*.2&&alpha.visible>pixels*.2,`${asset} must have a true transparent background`);for(const [frame,cell] of alpha.cells.entries())assert(cell.transparent>1000&&cell.visible>1000,`${asset} frame ${frame} must contain transparent space and character art`);}
 const idleAlpha=pngAlphaStats(fs.readFileSync(path.join(root,'assets','sprites','astra-idle-cape-frames-v4.png')),2,2),idlePixels=idleAlpha.width*idleAlpha.height;assert(idleAlpha.transparent>idlePixels*.2&&idleAlpha.visible>idlePixels*.2,'cape-only idle sheet must have a true transparent background');for(const [frame,cell] of idleAlpha.cells.entries())assert(cell.transparent>1000&&cell.visible>1000,`cape-only idle frame ${frame} must contain transparent space and character art`);
@@ -82,7 +119,7 @@ const machLandingAlpha=pngAlphaStats(fs.readFileSync(path.join(root,'assets','sp
 game.mode='classic';game.started=true;game.reset();game.audio.muted=true;
 assert.equal(game.player.launchDuration,.6,'power-launch charge must last 0.60 seconds');
 game.player.onGround=true;game.player.updateJumpAssist(.016,game);game.player.onGround=false;game.input.pressed.add('w');game.player.updateJumpAssist(.016,game);assert(game.player.coyoteTimer>0,'leaving a rooftop must preserve a short coyote-time window');assert(game.player.tryBufferedJump(game),'coyote-time jump must execute after stepping off a rooftop');assert.equal(game.player.vy,-CFG.jumpSpeed);game.input.clear();game.reset();game.player.onGround=false;game.input.pressed.add('w');game.player.updateJumpAssist(.016,game);assert(game.player.jumpBufferTimer>0,'an early jump press must enter the jump buffer');game.player.onGround=true;assert(game.player.tryBufferedJump(game),'buffered jump must execute on landing');game.input.clear();game.reset();game.player.onGround=true;assert.equal(game.powerLaunchStatus(game.player).label,'READY');game.player.energy=0;assert.equal(game.powerLaunchStatus(game.player).label,'LOW FLIGHT ENERGY');game.player.energy=CFG.maxEnergy;game.player.launchCharging=true;game.player.launchTimer=.3;assert.equal(game.powerLaunchStatus(game.player).label,'CHARGING 50%');game.reset();
-markSpriteLoaded(SPRITES.astraFlight);markSpriteLoaded(SPRITES.astraFlightUp);markSpriteLoaded(SPRITES.astraFlightDown);game.player.onGround=true;game.input.pressed.add('f');game.player.update(.016,game);assert.equal(game.player.flying,true,'F must enable flight');drawImageCalls=[];game.player.draw(context2d,game);assert(drawImageCalls.some(args=>args[0]===SPRITES.astraFlight),'toggling F must use the default sideways flight animation');assert(!drawImageCalls.some(args=>args[0]===SPRITES.astraFlightUp||args[0]===SPRITES.astraFlightDown),'F toggle alone must not select a vertical flight pose');game.input.clear();game.player.vx=0;game.player.vy=-CFG.flyMax;game.input.keys.add('w');drawImageCalls=[];game.player.draw(context2d,game);assert(drawImageCalls.some(args=>args[0]===SPRITES.astraFlightUp),'active ascent must use the straight-up flight pose');game.input.clear();game.player.vy=CFG.flyMax;game.input.keys.add('s');drawImageCalls=[];game.player.draw(context2d,game);assert(drawImageCalls.some(args=>args[0]===SPRITES.astraFlightDown),'active descent must use the straight-down flight pose');game.input.clear();game.reset();
+markSpriteLoaded(SPRITES.astraFlight);markSpriteLoaded(SPRITES.astraFlightUp);markSpriteLoaded(SPRITES.astraFlightDown);game.player.onGround=true;game.input.pressed.add('f');game.player.update(.016,game);assert.equal(game.player.flying,true,'F must enable flight');drawImageCalls=[];game.player.draw(context2d,game);assert(drawImageCalls.some(args=>args[0]===SPRITES.astraFlight),'toggling F must use the default sideways flight animation');assert(!drawImageCalls.some(args=>args[0]===SPRITES.astraFlightUp||args[0]===SPRITES.astraFlightDown),'F toggle alone must not select a vertical flight pose');game.input.clear();game.player.vx=0;game.player.vy=-CFG.flyMax;game.input.keys.add('w');game.player.updateFlightPose(.3);drawImageCalls=[];game.player.draw(context2d,game);assert(drawImageCalls.some(args=>args[0]===SPRITES.astraFlightUp),'active ascent must use the straight-up flight pose');game.input.clear();game.player.vy=CFG.flyMax;game.input.keys.add('s');game.player.updateFlightPose(.3);drawImageCalls=[];game.player.draw(context2d,game);assert(drawImageCalls.some(args=>args[0]===SPRITES.astraFlightDown),'active descent must use the straight-down flight pose');game.input.clear();game.reset();
 game.player.flying=true;game.player.vx=0;game.player.vy=0;game.player.updateFlightVelocity(.016,0,1,CFG.flyAccel,CFG.flyMax);const descentStep=game.player.vy;assert(descentStep>0&&descentStep<CFG.flyMax*.1,'flight descent must ease toward its target instead of snapping to max speed');game.player.vy=0;game.player.updateFlightVelocity(.016,0,-1,CFG.flyAccel,CFG.flyMax);assert(game.player.vy<0&&Math.abs(game.player.vy)<descentStep,'flight direction changes must decelerate smoothly without overshooting');game.player.vy=500;game.player.updateFlightVelocity(.016,0,-1,CFG.flyAccel,CFG.flyMax);assert(game.player.vy>0&&game.player.vy<500,'flight reversals must bleed speed smoothly instead of flipping direction in one frame');game.player.flying=false;
 game.launchWaves.length=0;const landingTarget=game.enemies[0],landingTargetHp=landingTarget.hp,machImpact=CFG.flightLandingShockwaveSpeed+100;game.player.onGround=false;game.player.y=1253.5;game.player.vy=machImpact;game.player.speedBuild=CFG.sonicThreshold;game.player.sonicBoomTriggered=true;game.player.update(.016,game);assert(game.player.onGround,'a Mach descent test must land on the Stage One floor');const landingWave=game.launchWaves.find(w=>w.impact);assert(landingWave,'a Mach-speed landing must create an impact shockwave');assert(landingWave.damage>0&&landingWave.damageRadius>0,'landing shockwave must carry explicit radial damage');assert(landingTarget.hp<landingTargetHp,'a nearby Stage One enemy must take landing shockwave damage');markSpriteLoaded(SPRITES.astraMachLanding);drawImageCalls=[];game.draw();assert(drawImageCalls.some(args=>args[0]===SPRITES.astraMachLanding),'Mach landing must render the generated four-frame VFX sheet');assert.equal(contextDepth,0,'custom landing shockwave graphics must balance canvas state');game.launchWaves.length=0;const controlledTargetHp=landingTarget.hp;game.player.onGround=false;game.player.y=1253.5;game.player.vy=machImpact;game.player.speedBuild=0;game.player.sonicBoomTriggered=false;game.player.update(.016,game);assert(game.player.onGround,'a non-Mach fast descent test must land on the Stage One floor');assert(!game.launchWaves.some(w=>w.impact),'speed alone must not create a landing shockwave without reaching Mach state');assert.equal(landingTarget.hp,controlledTargetHp,'a non-Mach landing must not deal shockwave damage');game.reset();
 game.player.onGround=true;game.player.vx=CFG.runMax;game.player.updateLocomotion(.12);assert(game.player.groundMotion>.7,'Astra must smoothly enter the upgraded walk cycle');markSpriteLoaded(SPRITES.astraWalk);markSpriteLoaded(SPRITES.astraSprint);drawImageCalls=[];game.player.draw(context2d,game);assert(drawImageCalls.some(args=>args[0]===SPRITES.astraWalk),'Astra walking must use the dedicated eight-frame walk sheet');game.player.boosting=true;game.player.updateLocomotion(.12);assert(game.player.sprintMotion>.7,'Astra must smoothly enter the upgraded sprint cycle');drawImageCalls=[];game.player.draw(context2d,game);assert(drawImageCalls.some(args=>args[0]===SPRITES.astraSprint),'Astra sprinting must use the dedicated eight-frame sprint sheet without frame blending');game.player.onGround=false;game.player.boosting=false;game.player.updateLocomotion(.25);assert(game.player.groundMotion<.1&&game.player.sprintMotion<.1,'Astra locomotion must smoothly settle when leaving the ground');game.player.vx=0;
@@ -422,10 +459,53 @@ assert.equal(drawImageCalls.length,1,'perfect block should hold a stable dedicat
 assert.equal(drawImageCalls[0][1],512);assert.equal(drawImageCalls[0][2],512,'perfect block must use frame four');
 guardHero.guardTimer=.08;drawImageCalls=[];guardHero.drawPrismGuard(context2d,game);assert.equal(drawImageCalls.length,2,'ending guard should blend into dissolve');
 guardHero.guardTimer=0;drawImageCalls=[];guardHero.drawPrismGuard(context2d,game);assert.equal(drawImageCalls.length,0,'no protective visual may linger after protection expires');
+game.settings.reducedFlashing=true;guardHero.guardPerfect=false;guardHero.guardTimer=.6;drawImageCalls=[];guardHero.drawPrismGuard(context2d,game);
+assert.equal(drawImageCalls.length,1,'reduced flashing must suppress continuous shield shimmer');
+assert.equal(drawImageCalls[0][1],1024,'reduced flashing must retain the stable shield frame');
 SPRITES.astraGuard.complete=false;
 for(const [ox,oy,dx,dy] of [[0,15,1,0],[30,15,-1,0],[15,0,0,1],[15,30,0,-1],[0,0,1,1],[30,30,-1,-1]]){
   assert.equal(rayRect(ox,oy,dx,dy,{x:10,y:10,w:10,h:10},100),10);
   assert.equal(rayRect(ox,oy,dx,dy,{x:10,y:10,w:10,h:10},9),null);
+}
+// Environmental kills credit recent player knockback, but not unrelated enemy falls.
+for(const mode of ['classic','stage2','stage3'])for(const power of ['sonic','landing']){
+  game.setGodMode(false);game.startMode(mode);game.input.clear();
+  const hero=game.activeHero,enemy=game.activeEnemies[0];hero.x=100;enemy.x=190;enemy.y=hero.y+hero.h-enemy.h;
+  hero.energy=50;hero.ultimateCharges=1;hero.ultimateKills=2;
+  if(power==='sonic')game.triggerSonicBoom(hero);else game.triggerLandingShockwave(hero,CFG.flightLandingShockwaveSpeed);
+  assert(!enemy.dead&&enemy.knockbackCredit>0,`${mode}/${power}: nonlethal knockback must carry kill credit`);
+  const scoreBefore=game.score;enemy.y=game.worldConfig.worldH+100;enemy.vy=100;
+  for(let i=0;i<120&&!enemy.dead;i++)enemy.update(SIM_STEP,game);
+  assert(enemy.dead);assert.equal(game.score-scoreBefore,enemy.score);assert.equal(game.runStats.kills,1);
+  assert.equal(hero.energy,50+CFG.maxEnergy*CFG.killEnergyRestore);assert.equal(hero.ultimateCharges,2);assert.equal(hero.ultimateKills,0);
+  enemy.update(SIM_STEP,game);enemy.kill(game);assert.equal(game.runStats.kills,1,'fallen enemies cannot reward twice');
+  game.restart();const unrelated=game.activeEnemies[0];unrelated.y=game.worldConfig.worldH+100;unrelated.update(SIM_STEP,game);
+  assert(unrelated.dead);assert.equal(game.runStats.kills,0,'unrelated falls must not give free rewards');assert.equal(game.score,0);
+  game.restart();const stale=game.activeEnemies[0];stale.knockbackCredit=.001;stale.y=game.worldConfig.worldH+100;stale.update(SIM_STEP,game);
+  assert(stale.dead);assert.equal(game.runStats.kills,0,'old knockback credit must expire');
+}
+// Actual rooftop knockback reproduction: no artificial out-of-world teleport.
+game.setGodMode(false);game.startMode('classic');game.intro=0;game.player.x=1160;game.player.y=1254;
+const ledgeEnemy=new GroundEnemy(1238,1268);game.enemies=[ledgeEnemy];game.triggerSonicBoom(game.player);
+for(let step=0;step<600&&!ledgeEnemy.dead;step++)ledgeEnemy.update(SIM_STEP,game);
+assert(ledgeEnemy.dead&&game.runStats.kills===1,'Sonic Boom rooftop fall must count as a kill');
+
+// A phased Weaver cannot be damaged, emit false beam-hit VFX, or be frozen by stagger.
+for(const power of ['beam','super','nova','sonic','landing','direct']){
+  game.setGodMode(false);game.startMode('stage3');game.input.clear();
+  const hero=game.activeHero,weaver=game.stage3Enemies.find(e=>e instanceof ForgeWeaver);
+  game.stage3Enemies=[weaver];hero.x=100;hero.y=700;weaver.x=190;weaver.y=700;weaver.alpha=0;weaver.state='phase-in';weaver.stateTimer=.42;
+  const hp=weaver.hp,vx=weaver.vx,vy=weaver.vy;game.input.mouse.x=weaver.x+weaver.w/2-game.camera.x;game.input.mouse.y=weaver.y+weaver.h/2-game.camera.y;
+  if(power==='beam'){hero.fireHeatVision(SIM_STEP,game);assert(hero.heatVisionFx<=0,'invisible targets must not generate a hit pulse');}
+  else if(power==='super')hero.fireSuperBeam(game,1);
+  else if(power==='nova')hero.castUltimate(game);
+  else if(power==='sonic')game.triggerSonicBoom(hero);
+  else if(power==='landing')game.triggerLandingShockwave(hero,CFG.flightLandingShockwaveSpeed);
+  else weaver.hit(20,game);
+  assert.equal(weaver.hp,hp,`${power}: invisible Weaver must be immune`);assert.equal(weaver.vx,vx);assert.equal(weaver.vy,vy);assert(!(weaver.staggerTimer>0));
+  for(let i=0;i<55;i++)weaver.update(SIM_STEP,game);
+  assert(weaver.damageable&&weaver.alpha===1&&weaver.state==='idle','Weaver must finish teleporting, not remain stuck invisible');
+  weaver.hit(20,game);assert.equal(weaver.hp,hp-20,'visible Weaver must become vulnerable again');
 }
 assert.equal(contextDepth,0,'all regression drawing must restore Canvas state');
 console.log('Mastra Vanguard smoke tests: PASS (including all-stage Prism Guard, 30/60/120/144 Hz, results, loading, pooling and accessibility)');

@@ -53,6 +53,8 @@ try{
   assert.equal(await page.evaluate(()=>Object.values(SPRITES).filter(image=>image.src).length),0,'main menu must not eagerly load three stages');
   await page.click('#openSettings');await page.check('#reducedFlashing');await page.selectOption('#effectsQuality','low');await page.click('#resumeGame');
   await page.reload();assert(await page.evaluate(()=>game.settings.reducedFlashing&&game.settings.quality==='low'),'display settings must persist');
+  await page.click('#openSettings');await page.keyboard.press('Escape');
+  await check(()=>document.activeElement.id==='classicMode'&&!game.settingsOpen,'Esc from main-menu settings must restore stage-button focus');
   await page.click('#openSettings');await page.selectOption('#effectsQuality','high');await page.click('#resumeGame');
   for(const mode of ['classic','stage2','stage3']){
     await page.evaluate(()=>{game.returnToMainMenu();game.setGodMode(false);});
@@ -147,7 +149,14 @@ try{
     for(let restart=0;restart<10;restart++)await page.evaluate(()=>game.restart());
     await check(()=>game.activeEnemies.length===(game.isStage3?12:game.isStage2?10:13),'repeated restarts must not accumulate enemies');
     await page.setViewportSize({width:960,height:640});await page.waitForTimeout(150);await page.keyboard.press('Escape');
-    await page.waitForFunction(()=>game.paused);await page.waitForTimeout(300);await page.screenshot({path:path.join(output,mode+'-pause-small.png')});await page.keyboard.press('Escape');
+    await page.waitForFunction(()=>game.paused);await page.waitForTimeout(300);
+    await check(()=>{
+      const body=document.querySelector('#pauseMenu .pause-content'),footer=document.querySelector('#pauseMenu .pause-actions');
+      return body.scrollHeight>body.clientHeight&&body.getBoundingClientRect().bottom<=footer.getBoundingClientRect().top+1;
+    },'small-screen pause footer must not overlap scrolling controls');
+    await page.locator('#reducedFlashing').evaluate(control=>control.scrollIntoView({block:'center',behavior:'instant'}));
+    await check(()=>{const control=document.getElementById('reducedFlashing').getBoundingClientRect(),footer=document.querySelector('#pauseMenu .pause-actions').getBoundingClientRect();return control.bottom<=footer.top&&control.top>=0;},'last display setting must remain reachable above footer');
+    await page.screenshot({path:path.join(output,mode+'-pause-small.png')});await page.keyboard.press('Escape');
     await page.click('#fullscreen');await page.waitForTimeout(150);await check(()=>Boolean(document.fullscreenElement),'fullscreen must enter');
     await page.click('#fullscreen');await page.setViewportSize({width:1280,height:800});
     const performanceSample=await page.evaluate(()=>{

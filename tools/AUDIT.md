@@ -1,5 +1,25 @@
 # Gameplay polish audit — September 2026
 
+## September 12 follow-up — local, unreleased
+
+- Fixed missing kill rewards when Sonic Boom or Mach landing knocks a ground enemy into a gap. All three stages now award the usual score, flight energy and Nova progress once, with a five-second credit window. Unrelated or much later falls do not grant free kills.
+- Made Forge Weaver teleport visibility consistent with combat: it cannot take damage or be staggered while phased out, and its health bar no longer reveals an invisible body. It becomes vulnerable again as it reappears. All damaging hero powers respect the same visibility rule.
+- Retained the local menu/accessibility fixes: a separate pause-action footer avoids overlapping settings on small screens, Esc restores menu keyboard focus, and Reduced Flashing disables Prism Guard's repeating shimmer.
+- Expanded smoke regressions cover both knockback abilities in all stages, an actual rooftop fall, duplicate/expired kill credit, and all damaging powers against phased-out Weavers followed by their return to vulnerability.
+- Complete smoke and real Chrome browser audits pass. Browser checks cover all three boss-completion paths, ten restarts per stage, powers, menus, resize/fullscreen, loading failures and accessibility settings. No console/page errors were recorded. Combat uses assisted positioning/God Mode; this is not an unassisted difficulty playthrough.
+- Latest 100-sample CPU update/Canvas-submission medians were 0.8 / 0.4 / 0.4 ms for Stages 1/2/3, with 17.84 / 22.75 / 10 draw calls per frame. These samples are not GPU/FPS measurements or evidence of a new performance gain.
+
+No version change or GitHub push was made for this follow-up.
+
+### Flight tuning follow-up
+
+- Gravity-assisted dives now reach 1.45× climbing speed: 1,044 versus 720 units/s normally, and 3,335 versus 2,300 at full boost. Upward speed, Power Launch velocity, energy costs and the Mach-only landing requirement remain unchanged.
+- Faster dive acceleration and stronger reversal braking make downward flight weightier while allowing responsive pull-outs. Releasing directional input retains powered hover; the speed envelope eases excess momentum away instead of snapping it to a cap.
+- Velocity-driven blends soften sideways/ascent/descent pose changes. Vertical Mach afterimages now match the vertical hero art, with the sideways sheet retained as a missing-art fallback.
+- Smoke regressions pass for every hero class at 30/60/120/144 Hz, including top speeds, diagonal limits, reversals, hover, pose blending, reset and sprite fallbacks. Keyboard flight checks and the complete three-stage Chrome integration audit pass without console/page errors.
+
+## Original version 0.7 audit
+
 Gameplay audit included in version 0.7. No new stage, mandatory dependency, or artwork replacement.
 
 ## Root-cause fixes and polish
