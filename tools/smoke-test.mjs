@@ -544,14 +544,16 @@ for(const mode of ['classic','stage2','stage3']){
   hero.x=500;hero.y=500;hero.flying=true;hero.vx=900;hero.vy=350;hero.boosting=true;
   assert(stageAssets(mode).includes(SPRITES.astraFlightShoot),'all stages must preload the new hero shooting art');
   for(const facing of [-1,1])for(const angle of [-Math.PI/2,-.65,0,.65,Math.PI/2]){
-    hero.facing=facing;const cx=hero.x+hero.w/2,cy=hero.y+hero.h*.48,dx=facing*Math.cos(angle),dy=Math.sin(angle);
+    hero.facing=facing;const anchor=hero.flightArmAnchor(),cx=anchor.x,cy=anchor.y,dx=facing*Math.cos(angle),dy=Math.sin(angle);
     game.input.mouse.x=cx+dx*600-game.camera.x;game.input.mouse.y=cy+dy*600-game.camera.y;
     const trace=hero.traceHeatVision(game);
     assert(Math.abs(trace.dx-dx)<1e-8&&Math.abs(trace.dy-dy)<1e-8,'airborne arm and beam must follow full vertical as well as sideways aim');
-    assert(Math.abs(trace.origin.x-cx-dx*48)<1e-8&&Math.abs(trace.origin.y-cy-dy*48)<1e-8,'beam must begin at the shared flying palm anchor');
+    assert(Math.abs(trace.origin.x-cx-dx*anchor.reach)<1e-8&&Math.abs(trace.origin.y-cy-dy*anchor.reach)<1e-8,'beam must begin at the shared arm endpoint');
+    assert.equal(hero.facing,facing,'aiming cannot flip the flight body');
     for(const capePhase of [0,.3,1,1.7,2,2.5,3,3.8]){
       hero.flightCapePhase=capePhase;hero.shootAnim=.18;drawImageCalls=[];hero.draw(context2d,game);
-      assert(drawImageCalls.some(args=>args[0]===SPRITES.astraFlightShoot),'firing in flight must render the dedicated flying sprite');
+      assert(drawImageCalls.some(args=>args[0]===SPRITES.astraFlightShoot&&args[3]===152&&args[4]===102),'firing must crop only the arm, never replace the body');
+      assert(drawImageCalls.some(args=>args[0]===SPRITES.astraFlight),'firing keeps the same flight body and cape');
       assert(!drawImageCalls.some(args=>args[0]===SPRITES.astraBeam||args[0]===SPRITES.astraAim),'airborne firing must never switch to the ground shooting stance');
       const hand=hero.beamOrigin();assert.equal(hand.x,trace.origin.x);assert.equal(hand.y,trace.origin.y);
     }
@@ -564,7 +566,7 @@ for(const mode of ['classic','stage2','stage3']){
   assert.equal(moves[0][0],hero.beamOrigin().x,'render interpolation must not detach the beam from its palm');
   assert.equal(beam.x,simulationX,'visual interpolation must not mutate the damage trace');
   SPRITES.astraFlightShoot.complete=false;drawImageCalls=[];hero.draw(context2d,game);
-  assert(!hero.hasFlightShotArt()&&drawImageCalls.some(args=>args[0]===SPRITES.astraAim||args[0]===SPRITES.astraBeam),'failed flight shooting art must preserve the old usable shooting fallback');
+  assert(!hero.hasFlightShotArt()&&drawImageCalls.some(args=>args[0]===SPRITES.astraFlight),'missing arm art preserves the flight body and procedural arm fallback');
   markSpriteLoaded(SPRITES.astraFlightShoot);
   hero.flying=false;hero.aimAngle=0;drawImageCalls=[];hero.draw(context2d,game);
   assert(!drawImageCalls.some(args=>args[0]===SPRITES.astraFlightShoot),'ground shooting must stay unchanged');
@@ -618,7 +620,7 @@ game.startMode('classic');const campaignEnemyCount=game.enemies.length;
 game.trainingClearEnemies();game.trainingClearBoss();game.trainingRefill();
 assert.equal(game.enemies.length,campaignEnemyCount,'inactive range controls cannot mutate the campaign');
 game.setGodMode(false);
-// Diagonal ascent must render one upward body, including Mach afterimages.
+// Diagonal flight keeps the sideways body; vertical poses are for straight travel only.
 for(const mode of ['classic','stage2','stage3','training']){
   game.startMode(mode);const hero=game.activeHero;hero.flying=true;hero.onGround=false;
   markSpriteLoaded(SPRITES.astraFlight);markSpriteLoaded(SPRITES.astraFlightUp);markSpriteLoaded(SPRITES.astraFlightDown);
@@ -626,8 +628,8 @@ for(const mode of ['classic','stage2','stage3','training']){
     hero.facing=facing;hero.vx=facing*speed*2;hero.vy=-speed;hero.boosting=boosted;
     hero.flightUpBlend=.2;hero.flightDownBlend=.3;hero.updateFlightPose(SIM_STEP);
     drawImageCalls=[];hero.draw(context2d,game);
-    assert(drawImageCalls.some(args=>args[0]===SPRITES.astraFlightUp),`${mode}: diagonal ascent uses the up sprite`);
-    assert(!drawImageCalls.some(args=>args[0]===SPRITES.astraFlight||args[0]===SPRITES.astraFlightDown),`${mode}: no overlapping sideways/down body or afterimages`);
+    assert(drawImageCalls.some(args=>args[0]===SPRITES.astraFlight),`${mode}: diagonal ascent uses the side sprite`);
+    assert(!drawImageCalls.some(args=>args[0]===SPRITES.astraFlightUp||args[0]===SPRITES.astraFlightDown),`${mode}: no overlapping vertical body or afterimages`);
   }
   SPRITES.astraFlightUp.complete=false;drawImageCalls=[];hero.draw(context2d,game);
   assert(drawImageCalls.some(args=>args[0]===SPRITES.astraFlight),'missing upward art retains a visible fallback');
@@ -668,7 +670,16 @@ for(const [dx,dy,expected] of [[0,-50,false],[0,-10,true],[120,0,false],[50,-10,
 for(const mode of ['classic','stage2','stage3','training']){
   game.startMode(mode);const hero=game.activeHero;hero.flying=true;hero.onGround=false;
   for(const dir of [-1,1]){hero.vx=dir*600;hero.vy=300;hero.boosting=true;hero.flightDownBlend=.25;drawImageCalls=[];hero.draw(context2d,game);
-    assert(drawImageCalls.some(a=>a[0]===SPRITES.astraFlightDown));assert(!drawImageCalls.some(a=>a[0]===SPRITES.astraFlight||a[0]===SPRITES.astraFlightUp),'descent cannot overlap body poses');}
+    assert(drawImageCalls.some(a=>a[0]===SPRITES.astraFlight));assert(!drawImageCalls.some(a=>a[0]===SPRITES.astraFlightDown||a[0]===SPRITES.astraFlightUp),'diagonal descent uses only the sideways body');}
+  for(const vy of [-600,600]){hero.vx=0;hero.vy=vy;hero.updateFlightPose(SIM_STEP);drawImageCalls=[];hero.draw(context2d,game);assert(drawImageCalls.some(a=>a[0]===(vy<0?SPRITES.astraFlightUp:SPRITES.astraFlightDown)),'straight vertical travel keeps its dedicated art');}
+  hero.updateFlightPose(SIM_STEP,1);assert.equal(hero.flightPoseForRender(),'side','horizontal input exits vertical pose immediately');
+  hero.vx=600;hero.vy=200;hero.facing=1;hero.shootAnim=0;hero.boosting=false;drawImageCalls=[];hero.draw(context2d,game);const coast=drawImageCalls.filter(a=>a[0]===SPRITES.astraFlight);
+  hero.shootAnim=.18;hero.aimAngle=Math.PI;drawImageCalls=[];hero.draw(context2d,game);assert.deepEqual(drawImageCalls.filter(a=>a[0]===SPRITES.astraFlight),coast,'firing cannot change body dimensions or frame placement');
+  const pivot=hero.flightArmAnchor();game.input.mouse.x=pivot.x-400-game.camera.x;game.input.mouse.y=pivot.y-game.camera.y;const backward=hero.traceHeatVision(game);assert.equal(hero.facing,1);assert(backward.dx<-.99,'backward aiming moves the arm instead of flipping Astra');
 }
+for(const [width,height] of [[1366,650],[960,540],[800,450],[640,360],[480,300]]){
+  game.w=width;game.h=height;const layout=game.hudLayout();assert(layout.panelX>=layout.resourceWidth+24);assert(layout.panelX+layout.panelWidth<=width-10);if(layout.compact)assert(50+206*layout.scale<=height-Math.min(90,height*.22)-10,'charging bar must fit above footer');
+}
+game.w=1280;game.h=720;
 assert.equal(contextDepth,0,'all regression drawing must restore Canvas state');
 console.log('Mastra Vanguard smoke tests: PASS (including all-stage Prism Guard, 30/60/120/144 Hz, results, loading, pooling, accessibility and Training Range sandbox)');

@@ -104,7 +104,9 @@ Gameplay controls follow physical key positions, independently of the typing lay
 
 **Flight:** hold S to dive up to 45% faster than climbing; Shift + S reaches Sonic Boom in about 0.5 seconds from a hover when energy and cooldown allow. Hold W to pull up, or release movement to brake toward a stable hover. Applies in every stage.
 
-Airborne beams use a dedicated animated flying pose, full vertical aiming and a palm-aligned laser. Ground shooting is unchanged.
+Airborne beams keep Astra's flight body and size consistent while his firing arm follows your aim. Diagonal travel uses sideways flight; straight ascent/descent uses the vertical poses. Ground shooting is unchanged.
+
+The HUD automatically compacts for smaller browser windows. Menus and Training Range controls scroll when needed, so fullscreen is optional.
 
 Open **Settings** from the main menu or pause with `Esc` to adjust audio and visual preferences. AUTO effects reduce cosmetic work after sustained slow rendering; all quality levels preserve attack warnings. Reduced-motion system preferences supply the initial accessibility defaults. `R` restarts after defeat/completion; use the pause menu to restart an active mission.
 
