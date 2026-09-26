@@ -182,6 +182,25 @@ try{
   await page.click('#trainingClearBoss');await page.click('#trainingReset');await page.waitForTimeout(160);
   await check(()=>game.mode==='training'&&game.trainingEnemies.length===0&&!game.trainingBoss&&game.score===0,'Training Range reset must clear disposable sandbox state');
   report.trainingRange={world:[await page.evaluate(()=>game.worldConfig.worldW),await page.evaluate(()=>game.worldConfig.worldH)],spawned:3,bossPreview:'heliarch',reset:true};
+  // Real DOM focus, layout-independent keys and Canvas alpha checks.
+  const auditPolish=await page.evaluate(()=>{
+    const hero=game.activeHero;hero.flying=true;hero.vx=400;hero.vy=0;hero.invuln=0;hero.boosting=false;hero.shootAnim=0;hero.chargingBeam=false;
+    const saved=SPRITES.astraFlight.sheet,savedSurface=hero.flightSurface,source=document.createElement('canvas');source.width=64;source.height=64;hero.flightSurface=null;
+    const paint=source.getContext('2d');paint.fillStyle='#ffffff';paint.fillRect(0,0,64,64);
+    let minAlpha=255;
+    try{SPRITES.astraFlight.sheet=source;for(const phase of [.1,.25,.5,.75,.9]){hero.flightCapePhase=phase;hero.draw(game.ctx,game);minAlpha=Math.min(minAlpha,hero.flightSurface.getContext('2d').getImageData(128,110,1,1).data[3]);}}
+    finally{SPRITES.astraFlight.sheet=saved;hero.flightSurface=savedSurface;}
+    hero.chargingBeam=true;hero.beamCharge=.7;document.getElementById('trainingEnemyType').focus();
+    const cancelsCharge=!hero.chargingBeam&&hero.beamCharge===0;
+    document.getElementById('trainingClearEnemies').click();
+    const canvasFocused=document.activeElement===game.canvas;
+    game.canvas.dispatchEvent(new KeyboardEvent('keydown',{key:'δ',code:'KeyD',bubbles:true}));
+    const physicalKey=game.input.down('d');game.canvas.dispatchEvent(new KeyboardEvent('keyup',{key:'d',code:'KeyD',bubbles:true}));
+    return {minAlpha,cancelsCharge,canvasFocused,physicalKey,released:!game.input.down('d')};
+  });
+  assert(auditPolish.minAlpha>=254,'cape crossfade must preserve opaque body pixels');
+  assert(auditPolish.cancelsCharge&&auditPolish.canvasFocused&&auditPolish.physicalKey&&auditPolish.released,'range focus and physical controls must work');
+  report.polish=auditPolish;
   await page.evaluate(()=>game.returnToMainMenu());
   // Asset failure remains playable; this intentionally fails just one image before network I/O.
   const fallback=await context.newPage();

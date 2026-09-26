@@ -6,6 +6,12 @@ Mastra Vanguard is a three-stage 2D superhero action-platformer spanning Meridia
 
 This is a long-term creative game project developed with Codex and GPT-5.6.
 
+## Version 0.9 highlights
+
+- Cleaner flight poses and cape animation
+- Fairer hazard hitboxes and more reliable range controls/spawning
+- Lighter loading, recoverable AUTO effects quality, and expanded tests
+
 ## Version 0.8 highlights
 
 - New Training Range with enemy spawning and all three boss previews
@@ -25,6 +31,7 @@ This is a long-term creative game project developed with Codex and GPT-5.6.
 - Sandbox score and campaign progression are never saved
 - Open flight shafts connect upper decks to the deep range; nearby target spawning is capped at 48
 - Boss previews use matching combat floors; Refill Powers also revives Astra after defeat
+- Ground targets require a nearby deck; use flying targets while exploring open space
 
 ## Version 0.6 highlights
 
@@ -76,6 +83,8 @@ Run `node tools/smoke-test.mjs` for the gameplay smoke tests.
 Optional browser QA: `node tools/browser-audit.mjs` with an existing Playwright installation. Set `PLAYWRIGHT_MODULE` to its module directory and `BROWSER_PATH` to a Chrome/Chromium executable if needed. Reports and screenshots go to the ignored `artifacts/browser-audit/` directory. No browser-test dependency is required to play.
 
 ## Controls
+
+Gameplay controls follow physical key positions, independently of the typing layout.
 
 | Input | Action |
 | --- | --- |

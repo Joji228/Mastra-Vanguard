@@ -52,11 +52,12 @@ class MockAudioContext {
   createOscillator(){return{type:'sine',frequency:{setValueAtTime(){},exponentialRampToValueAtTime(){}},connect(){return this;},disconnect(){},start(){},stop(){},addEventListener(){}};}
 }
 
+const inputListeners=new Map();
 const sandbox={
   console,Math,JSON,Number,Boolean,Set,Map,Object,Array,String,Date,Error,Promise,
   innerWidth:1280,innerHeight:720,devicePixelRatio:1,performance:{now:()=>1000},
   document,localStorage,Image:MockImage,Audio:MockAudio,AudioContext:MockAudioContext,webkitAudioContext:MockAudioContext,
-  Element:MockElement,addEventListener(){},requestAnimationFrame(){},setTimeout,clearTimeout
+  Element:MockElement,addEventListener(type,handler){if(!inputListeners.has(type))inputListeners.set(type,[]);inputListeners.get(type).push(handler);},requestAnimationFrame(){},setTimeout,clearTimeout
 };
 sandbox.window=sandbox; sandbox.globalThis=sandbox;
 vm.createContext(sandbox);
@@ -571,7 +572,8 @@ for(const mode of ['classic','stage2','stage3']){
 // Training Range is an isolated sandbox: it shares Astra and combat classes but
 // never participates in campaign progression or score persistence.
 assert(/id="trainingMode"[\s\S]*?<h2>TRAINING RANGE<\/h2>/i.test(html),'Training Range must be available as a fourth menu option');
-assert.equal(stageAssets('training').length,36,'Training Range must preload the shared hero plus all campaign preview art');
+assert.equal(stageAssets('training').length,31,'Training Range preloads preview art, not unused campaign backgrounds');
+for(const key of ['cityMap','stage2Map','stage2Facades','stage3Map','stage3Facades'])assert(!stageAssets('training').includes(SPRITES[key]));
 for(const id of ['trainingHud','trainingSpawnEnemy','trainingSpawnBoss','trainingClearEnemies','trainingClearBoss','trainingRefill','trainingReset'])assert(html.includes(`id="${id}"`),`Training Range must expose ${id}`);
 game.setGodMode(false);game.startMode('training');assert(game.isTraining&&game.activeHero===game.trainingHero,'Training Range must use the shared Astra player');assert.equal(game.worldConfig.worldW,TRAINING.worldW);assert.equal(game.worldConfig.worldH,TRAINING.worldH);assert(game.trainingPlatforms.length>=8,'Training Range must initialize a large platform layout');assert.equal(game.score,0);
 for(const type of ['trooper','drone','stalker','spore','legionnaire','manta','weaver']){game.trainingEnemies.length=0;game.spawnTrainingEnemies(type,2);assert.equal(game.trainingEnemies.length,2,`${type} spawner must create two targets`);for(let i=0;i<30;i++)game.updateTraining(SIM_STEP);for(const enemy of game.trainingEnemies){assert(Number.isFinite(enemy.x)&&Number.isFinite(enemy.y)&&Number.isFinite(enemy.vx)&&Number.isFinite(enemy.vy),`${type} training target motion must stay finite`);}}
@@ -630,6 +632,43 @@ for(const mode of ['classic','stage2','stage3','training']){
   SPRITES.astraFlightUp.complete=false;drawImageCalls=[];hero.draw(context2d,game);
   assert(drawImageCalls.some(args=>args[0]===SPRITES.astraFlight),'missing upward art retains a visible fallback');
   markSpriteLoaded(SPRITES.astraFlightUp);
+}
+// v0.9 regression coverage: input, retry, quality recovery, range and hazards.
+game.input.clear();const keyDown=inputListeners.get('keydown')[0],keyUp=inputListeners.get('keyup')[0];
+for(const [code,key,action] of [['KeyW','ς','w'],['KeyA','α','a'],['KeyS','σ','s'],['KeyD','δ','d'],['KeyQ',';','q'],['KeyV','ω','v'],['KeyF','φ','f'],['Space',' ',' ']]){
+  keyDown({code,key,preventDefault(){}});assert(game.input.down(action),code+': layout-independent input');
+  keyUp({code,key:action});assert(!game.input.down(action),'layout switch cannot leave a key stuck');
+}
+game.input.clear();
+const retryImage=new MockImage();retryImage.pendingSrc='retry.png';const firstAttempt=readySprite(retryImage);
+retryImage.listeners.get('error')();assert.equal(await firstAttempt,false);
+const secondAttempt=readySprite(retryImage);assert.notEqual(firstAttempt,secondAttempt);
+markSpriteLoaded(retryImage);retryImage.listeners.get('load')();assert.equal(await secondAttempt,true);
+game.settings.quality='auto';game.settings.reducedMotion=false;
+for(const fps of [30,60,120,144]){
+  game.restart();for(let i=0;i<fps;i++)game.updateAutoQuality(14,1/fps);assert(game.autoLow);
+  for(let i=0;i<fps*4;i++)game.updateAutoQuality(2,1/fps);assert(game.autoLow,'short headroom must not oscillate quality');
+  for(let i=0;i<fps*5;i++)game.updateAutoQuality(2,1/fps);assert(!game.autoLow,'quality should recover');
+}
+game.autoLow=true;game.restart();assert(!game.autoLow);
+game.startMode('training');game.trainingHero.x=3400;game.trainingHero.y=1000;game.spawnTrainingEnemies('trooper',3);
+assert.equal(game.trainingEnemies.length,3);
+for(const e of game.trainingEnemies){assert(Math.abs(e.y-game.trainingHero.y)<900);assert(game.trainingPlatforms.some(p=>e.x>=p.x&&e.x+e.w<=p.x+p.w&&Math.abs(e.y+e.h-p.y)<1));}
+game.trainingClearEnemies();game.trainingHero.x=5000;game.trainingHero.y=2400;game.spawnTrainingEnemies('trooper',1);
+assert.equal(game.trainingEnemies.length,0);assert(document.getElementById('trainingStatus').textContent.includes('No nearby ground'));
+const {Stage3Projectile:AuditProjectile,FoundryHazard:AuditHazard}=vm.runInContext('({Stage3Projectile,FoundryHazard})',sandbox);
+game.trainingHero.x=15000;const throughDeck=new AuditProjectile(500,1624,100,0);throughDeck.update(SIM_STEP,game);assert(!throughDeck.dead);
+const hitsRoof=new AuditProjectile(500,1580,0,2400);hitsRoof.update(SIM_STEP,game);assert(hitsRoof.dead,'roofs still stop projectiles');
+game.setGodMode(false);game.startMode('stage3');
+for(const [dx,dy,expected] of [[0,-50,false],[0,-10,true],[120,0,false],[50,-10,true]]){
+  const hero=game.activeHero;hero.hp=100;hero.invuln=0;hero.guardTimer=0;hero.x=1000+dx-hero.w/2;hero.y=1500+dy-hero.h;
+  const hazard=new AuditHazard(1000,1500,112);hazard.life=hazard.active;hazard.update(SIM_STEP,game);
+  assert.equal(hero.hp<100,expected,'hazard damage matches visible radius and height');
+}
+for(const mode of ['classic','stage2','stage3','training']){
+  game.startMode(mode);const hero=game.activeHero;hero.flying=true;hero.onGround=false;
+  for(const dir of [-1,1]){hero.vx=dir*600;hero.vy=300;hero.boosting=true;hero.flightDownBlend=.25;drawImageCalls=[];hero.draw(context2d,game);
+    assert(drawImageCalls.some(a=>a[0]===SPRITES.astraFlightDown));assert(!drawImageCalls.some(a=>a[0]===SPRITES.astraFlight||a[0]===SPRITES.astraFlightUp),'descent cannot overlap body poses');}
 }
 assert.equal(contextDepth,0,'all regression drawing must restore Canvas state');
 console.log('Mastra Vanguard smoke tests: PASS (including all-stage Prism Guard, 30/60/120/144 Hz, results, loading, pooling, accessibility and Training Range sandbox)');
