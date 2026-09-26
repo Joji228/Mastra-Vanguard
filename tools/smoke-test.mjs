@@ -127,6 +127,14 @@ game.player.onGround=true;game.player.vx=CFG.runMax;game.player.updateLocomotion
 game.reset();game.player.onGround=true;game.input.keys.add('shift');game.input.keys.add('w');game.player.update(.016,game);assert(game.player.launchCharging,'Shift + W must begin a grounded power-launch charge');assert.equal(game.player.vx,0,'power-launch charge must lock horizontal movement');game.player.draw(context2d,game);assert.equal(contextDepth,0,'power-launch charge drawing must balance canvas state');game.input.keys.delete('w');game.player.update(.016,game);assert.equal(game.player.launchCharging,false,'releasing the combo during charge must cancel cleanly');assert.equal(game.player.flying,false,'cancelled power launch must not toggle flight');game.input.clear();game.reset();game.player.onGround=true;game.input.keys.add('shift');game.input.keys.add('w');for(let i=0;i<30;i++)game.player.update(1/30,game);assert.equal(game.player.flying,true,'completed power launch must enable flight');assert.equal(game.player.speedBuild,1,'power launch must start at maximum boost build');assert(Math.hypot(game.player.vx,game.player.vy)>CFG.speedFlyMax*.95,'power launch must use maximum boosted flight speed');assert(game.launchWaves.length===1,'power launch must create one takeoff shockwave');game.player.draw(context2d,game);assert.equal(contextDepth,0,'power-launch burst drawing must balance canvas state');game.input.clear();
 assert.equal(game.player.vx,0,'completed power launch must travel perfectly straight upward');
 assert.equal(game.player.vy,-CFG.speedFlyMax,'completed power launch must use maximum boosted flight speed vertically');
+markSpriteLoaded(SPRITES.astraPowerLaunch);markSpriteLoaded(SPRITES.astraPowerTakeoff);
+game.reset();game.player.onGround=true;game.player.launchCharging=true;
+for(const [timer,sourceX] of [[.05,0],[.5,510]]){
+  game.player.launchTimer=timer;drawImageCalls=[];game.player.draw(context2d,game);
+  assert(drawImageCalls.some(args=>args[0]===SPRITES.astraPowerLaunch&&args.length===9&&Math.abs(args[1]-sourceX*SPRITES.astraPowerLaunch.width/2172)<1e-8),'launch charge must crop the complete matching pose');
+}
+game.player.launchCharging=false;game.player.flying=true;game.player.launchBurst=.19;drawImageCalls=[];game.player.draw(context2d,game);
+assert(drawImageCalls.some(args=>args[0]===SPRITES.astraPowerTakeoff),'takeoff must use its isolated transparent pose');
 game.reset();game.player.onGround=true;game.input.keys.add('d');game.player.update(.08,game);assert(game.player.x>game.player.spawnX,'normal grounded movement must remain available after power-launch integration');game.input.clear();
 const wardenVfxPng=fs.readFileSync(path.join(root,'assets','sprites','prism-warden-vfx-frames-v1.png')),wardenAlpha=pngAlphaStats(wardenVfxPng),wardenPixels=wardenAlpha.width*wardenAlpha.height;assert.equal(wardenAlpha.width,1536);assert.equal(wardenAlpha.height,1024);assert(wardenAlpha.transparent>wardenPixels*.2&&wardenAlpha.visible>wardenPixels*.2,'Prism Warden VFX must contain genuine transparent and visible pixels');for(const [frame,cell] of wardenAlpha.cells.entries())assert(cell.transparent>1000&&cell.visible>1000,`Prism Warden VFX frame ${frame} must contain transparency and artwork`);assert.equal(game.wardenEffects.length,0,'classic mode must reset Warden effects');
 game.input.keys.add(' ');game.input.pressed.add(' ');
@@ -574,7 +582,7 @@ for(const mode of ['classic','stage2','stage3']){
 // Training Range is an isolated sandbox: it shares Astra and combat classes but
 // never participates in campaign progression or score persistence.
 assert(/id="trainingMode"[\s\S]*?<h2>TRAINING RANGE<\/h2>/i.test(html),'Training Range must be available as a fourth menu option');
-assert.equal(stageAssets('training').length,31,'Training Range preloads preview art, not unused campaign backgrounds');
+assert(stageAssets('training').includes(SPRITES.astraPowerTakeoff),'Training Range must preload Astra’s isolated launch burst artwork');
 for(const key of ['cityMap','stage2Map','stage2Facades','stage3Map','stage3Facades'])assert(!stageAssets('training').includes(SPRITES[key]));
 for(const id of ['trainingHud','trainingSpawnEnemy','trainingSpawnBoss','trainingClearEnemies','trainingClearBoss','trainingRefill','trainingReset'])assert(html.includes(`id="${id}"`),`Training Range must expose ${id}`);
 game.setGodMode(false);game.startMode('training');assert(game.isTraining&&game.activeHero===game.trainingHero,'Training Range must use the shared Astra player');assert.equal(game.worldConfig.worldW,TRAINING.worldW);assert.equal(game.worldConfig.worldH,TRAINING.worldH);assert(game.trainingPlatforms.length>=8,'Training Range must initialize a large platform layout');assert.equal(game.score,0);

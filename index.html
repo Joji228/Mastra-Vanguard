@@ -368,7 +368,8 @@
     astraFrames: loadSprite('assets/sprites/astra-frames-v2.png'),
     astraWalk: loadSprite('assets/sprites/astra-walk-frames-v3.png'),
     astraSprint: loadSprite('assets/sprites/astra-sprint-frames-v1.png'),
-    astraPowerLaunch: loadSprite('assets/sprites/astra-power-launch-frames-v1.png'),
+    astraPowerLaunch: loadSprite('assets/sprites/astra-power-launch-frames-v2.png'),
+    astraPowerTakeoff: loadSprite('assets/sprites/astra-power-takeoff-v1.png'),
     astraMachLanding: loadSprite('assets/sprites/astra-mach-landing-vfx-frames-v1.png',false),
     astraGuard: loadSprite('assets/sprites/astra-prism-guard-vfx-v1.png',false),
     astraFlightUp: loadSprite('assets/sprites/astra-flight-up-v1.png'),
@@ -431,7 +432,7 @@
 
   function ensureSprite(image){if(!image.src)image.src=image.pendingSrc;}
   function stageAssets(mode){
-    const hero=['astraFrames','astraWalk','astraSprint','astraPowerLaunch','astraMachLanding','astraGuard','astraFlightUp','astraFlightDown','astraIdle','astraFlight','astraFlightShoot','astraBeam','astraAim'];
+    const hero=['astraFrames','astraWalk','astraSprint','astraPowerLaunch','astraPowerTakeoff','astraMachLanding','astraGuard','astraFlightUp','astraFlightDown','astraIdle','astraFlight','astraFlightShoot','astraBeam','astraAim'];
     const environment=mode==='training'?['buildingFacades','trooperFrames','drone','wardenIdle','wardenMove','wardenRanged','wardenSlam','wardenDeath','wardenVfx','stage2Stalker','stage2Drone','stage2Boss','stage2BossVfx','stage3Legionnaire','stage3Manta','stage3Weaver','stage3Boss','stage3BossVfx']:mode==='stage2'?['stage2Map','stage2Facades','stage2Stalker','stage2Drone','stage2Boss','stage2BossVfx']:mode==='stage3'?['stage3Map','stage3Facades','stage3Legionnaire','stage3Manta','stage3Weaver','stage3Boss','stage3BossVfx']:['cityMap','buildingFacades','trooperFrames','drone','wardenIdle','wardenMove','wardenRanged','wardenSlam','wardenDeath','wardenVfx'];
     return hero.concat(environment).map(key=>SPRITES[key]);
   }
@@ -480,6 +481,16 @@
     const source=image.sheet||image,cellW=source.width/columns,cellH=source.height/rows,col=frame%columns,row=Math.floor(frame/columns),width=height*cellW/cellH;
     ctx.save();ctx.globalAlpha*=alpha;ctx.translate(x,baseline);ctx.rotate(rotation);ctx.scale(facing*stretch,squash);ctx.filter=spriteFlash(flash)?'brightness(2) saturate(.4)':'none';
     ctx.drawImage(source,col*cellW,row*cellH,cellW,cellH,-width/2,-height,width,height);ctx.restore();return true;
+  }
+
+  // Launch silhouettes do not occupy equal cells in the source art.
+  const ASTRA_LAUNCH_RECTS=Object.freeze([{x:0,w:510,anchor:336},{x:510,w:570,anchor:327}]);
+  function drawLaunchSprite(ctx,image,frame,x,baseline,height,facing=1,rotation=0,stretch=1,squash=1,alpha=1){
+    if(!image.complete||!image.naturalWidth)return false;
+    const source=image.sheet||image,rect=ASTRA_LAUNCH_RECTS[frame],sx=source.width/2172,sy=source.height/724,unit=height/724;
+    ctx.save();ctx.globalAlpha*=alpha;ctx.translate(x,baseline);ctx.rotate(rotation);ctx.scale(facing*stretch,squash);
+    ctx.drawImage(source,rect.x*sx,0,rect.w*sx,724*sy,-rect.anchor*unit,-height,rect.w*unit,height);
+    ctx.restore();return true;
   }
 
   function drawSpriteFrameCentered(ctx,image,frame,columns,rows,x,y,height,rotation=0,stretch=1,squash=1,alpha=1){
@@ -1065,7 +1076,9 @@
         c.globalCompositeOperation='source-over';
         ctx.save();ctx.globalAlpha*=alpha;ctx.translate(x,baseline);ctx.rotate(tilt);ctx.scale(this.facing*stretch,squash);ctx.drawImage(surface,-128,-160);ctx.restore();return true;
       };
-      const drawLaunch=(x,baseline,alpha=1)=>{const launchFrame=this.launchCharging?Math.min(1,Math.floor(launchChargeP*2)):2;return drawSpriteFrame(ctx,SPRITES.astraPowerLaunch,launchFrame,4,1,x,baseline,116,this.facing,tilt,false,stretch,squash,alpha);};
+      const drawLaunch=(x,baseline,alpha=1)=>this.launchCharging?
+        drawLaunchSprite(ctx,SPRITES.astraPowerLaunch,launchChargeP<.26?0:1,x,baseline,116,this.facing,tilt,stretch,squash,alpha):
+        drawSprite(ctx,SPRITES.astraPowerTakeoff,x,baseline,116,this.facing,tilt,false,stretch,squash,alpha);
       const drawFlightPose=(x,baseline,alpha=1,trail=false)=>{
         // Missing vertical art falls back to the sideways sheet, never an invisible hero.
         // Only straight vertical travel uses the dedicated up/down body.
@@ -1080,15 +1093,19 @@
       };
       const drawGround=(x,baseline,alpha=1)=>movingGround?drawSpriteFrame(ctx,groundSheet,frame,groundColumns,groundRows,x,baseline,116,this.facing,tilt,false,stretch,squash,alpha):drawSpriteFrame(ctx,SPRITES.astraIdle,idleFrame,2,2,x,baseline+ASTRA_IDLE_FRAME_Y[idleFrame],116,this.facing,tilt,false,stretch,squash,alpha);
       ctx.save();ctx.shadowColor=this.boosting?'#ffe75d':this.flying?'#45edff':'rgba(0,0,0,.5)';ctx.shadowBlur=effectsShadow(this.boosting?30:this.flying?22:7);
-      if((this.launchCharging||launchBurstP>0)&&deathT===0){const p=this.launchCharging?launchChargeP:launchBurstP,baseX=this.x+this.w/2,baseY=this.y+this.h+5;ctx.save();ctx.globalCompositeOperation='screen';ctx.globalAlpha=this.launchCharging?.28+p*.48:.22+launchBurstP*.5;ctx.shadowBlur=effectsShadow(18+p*28);ctx.shadowColor=this.launchCharging?'#6df6ff':'#fff2a0';ctx.strokeStyle=this.launchCharging?'#9dfaff':'#fff2a0';ctx.lineWidth=2+ p*3;ctx.beginPath();ctx.ellipse(baseX,baseY,15+p*24,4+p*7,0,0,Math.PI*2);ctx.stroke();if(this.launchCharging){ctx.fillStyle='#76efff';for(let i=0;i<3;i++){const a=this.anim*4+i*2.1,rr=9+p*15;ctx.beginPath();ctx.arc(baseX+Math.cos(a)*rr,baseY-3+Math.sin(a)*rr*.28,2+p*2,0,Math.PI*2);ctx.fill();}}else{ctx.strokeStyle='#dffcff';ctx.lineWidth=3;for(let i=0;i<5;i++){const a=i*Math.PI*2/5+this.anim*.8;ctx.beginPath();ctx.moveTo(baseX+Math.cos(a)*12,baseY+Math.sin(a)*5);ctx.lineTo(baseX+Math.cos(a)*38,baseY+Math.sin(a)*12-12);ctx.stroke();}}ctx.restore();}
+      if((this.launchCharging||launchBurstP>0)&&deathT===0){const p=this.launchCharging?launchChargeP:launchBurstP,baseX=this.launchCharging?this.x+this.w/2:this.launchOriginX,baseY=this.launchCharging?this.y+this.h+5:this.launchOriginY+5;ctx.save();ctx.globalCompositeOperation='screen';ctx.globalAlpha=this.launchCharging?.28+p*.48:.22+launchBurstP*.5;ctx.shadowBlur=effectsShadow(18+p*28);ctx.shadowColor=this.launchCharging?'#6df6ff':'#fff2a0';ctx.strokeStyle=this.launchCharging?'#9dfaff':'#fff2a0';ctx.lineWidth=2+ p*3;ctx.beginPath();ctx.ellipse(baseX,baseY,15+p*24,4+p*7,0,0,Math.PI*2);ctx.stroke();if(this.launchCharging){ctx.fillStyle='#76efff';for(let i=0;i<3;i++){const a=this.anim*4+i*2.1,rr=9+p*15;ctx.beginPath();ctx.arc(baseX+Math.cos(a)*rr,baseY-3+Math.sin(a)*rr*.28,2+p*2,0,Math.PI*2);ctx.fill();}}else{ctx.strokeStyle='#dffcff';ctx.lineWidth=3;for(let i=0;i<5;i++){const a=i*Math.PI*2/5+this.anim*.8;ctx.beginPath();ctx.moveTo(baseX+Math.cos(a)*12,baseY+Math.sin(a)*5);ctx.lineTo(baseX+Math.cos(a)*38,baseY+Math.sin(a)*12-12);ctx.stroke();}}ctx.restore();}
       if((this.launchCharging||launchBurstP>0)&&deathT===0){const p=this.launchCharging?launchChargeP:launchBurstP,baseX=this.x+this.w/2,baseY=this.y+this.h-8,back=-this.facing,drop=this.launchCharging?(18+p*22):(-12-p*18);ctx.save();ctx.globalCompositeOperation='screen';ctx.globalAlpha=.18+p*.28;ctx.shadowBlur=effectsShadow(18);ctx.shadowColor='#cf6dff';ctx.fillStyle='rgba(198,67,177,.62)';ctx.beginPath();ctx.moveTo(baseX-back*8,baseY-24);ctx.quadraticCurveTo(baseX+back*(34+p*18),baseY+drop*.35,baseX+back*(56+p*26),baseY+drop);ctx.quadraticCurveTo(baseX+back*(28+p*14),baseY+drop+18,baseX-back*4,baseY-7);ctx.closePath();ctx.fill();ctx.strokeStyle='#ff87e8';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(baseX-back*7,baseY-18);ctx.quadraticCurveTo(baseX+back*(30+p*16),baseY+drop*.28,baseX+back*(51+p*23),baseY+drop-3);ctx.stroke();ctx.restore();}
       if(this.boosting&&!g.settings.reducedMotion&&deathT===0){ctx.save();ctx.globalCompositeOperation='screen';for(let i=3;i>=1;i--){const ax=this.x+this.w/2-this.vx*.018*i,ay=this.y+this.h+8+bob-this.vy*.018*i;if(this.flying)drawFlightPose(ax,ay,.08*i,true);else drawSpriteFrame(ctx,groundSheet,frame,groundColumns,groundRows,ax,ay,116,this.facing,tilt,false,stretch,squash,.08*i);}ctx.restore();}
       const drawX=this.x+this.w/2-this.facing*shootKick,drawBaseline=this.y+this.h+8+bob+deathT*22;
-      const rendered=this.launchCharging?drawLaunch(drawX,drawBaseline,1-deathT):
-        (this.flying?drawFlightPose(drawX,drawBaseline,1-deathT):
-          ((aiming&&aimFrame>=0?drawSpriteFrame(ctx,SPRITES.astraAim,aimFrame,2,2,drawX,drawBaseline,116,this.facing,tilt,false,stretch,squash,1-deathT):false)||
-          (aiming?drawSprite(ctx,SPRITES.astraBeam,drawX,drawBaseline,116,this.facing,tilt,false,stretch,squash,1-deathT):false)))||
-        drawGround(drawX,drawBaseline,1-deathT)||drawSprite(ctx,SPRITES.astra,drawX,this.y+this.h+7+bob+deathT*22,94,this.facing,tilt,false,stretch,squash,1-deathT);
+      let rendered=false;
+      if(this.launchCharging)rendered=drawLaunch(drawX,drawBaseline,1-deathT);
+      else if(this.flying){
+        const releaseMix=this.launchBurst>0?clamp((.2-this.launchBurst-.055)/.09,0,1):1;
+        if(releaseMix<1)rendered=drawLaunch(drawX,drawBaseline,(1-deathT)*(1-releaseMix))||rendered;
+        if(releaseMix>0)rendered=drawFlightPose(drawX,drawBaseline,(1-deathT)*releaseMix)||rendered;
+      }else rendered=(aiming&&aimFrame>=0?drawSpriteFrame(ctx,SPRITES.astraAim,aimFrame,2,2,drawX,drawBaseline,116,this.facing,tilt,false,stretch,squash,1-deathT):false)||
+        (aiming?drawSprite(ctx,SPRITES.astraBeam,drawX,drawBaseline,116,this.facing,tilt,false,stretch,squash,1-deathT):false);
+      if(!rendered)rendered=drawGround(drawX,drawBaseline,1-deathT)||drawSprite(ctx,SPRITES.astra,drawX,this.y+this.h+7+bob+deathT*22,94,this.facing,tilt,false,stretch,squash,1-deathT);
       if(this.flying&&(aiming||this.chargingBeam)&&!this.launchCharging)this.drawFlightShot(ctx,g,1-deathT);
       ctx.restore();
       if(rendered){
