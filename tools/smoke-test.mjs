@@ -444,7 +444,7 @@ for(const mode of ['classic','stage2','stage3']){
   game.restart();hero=game.activeHero;hero.x=250;hero.y=400;
   game.input.pressed.add('q');game.input.pressed.add('f');game.input.pressed.add('v');game.input.pressed.add(' ');game.input.keys.add(' ');game.input.mouse.down=true;
   hero.update(SIM_STEP,game);game.input.endFrame();
-  assert(hero.guardTimer>0&&hero.flying&&hero.chargingBeam&&hero.ultimateCd>0&&game[hero.heatVisionKey(game)],`${mode}: guard must coexist with flight, both beams and Nova`);
+  assert(hero.guardTimer>0&&hero.flying&&hero.chargingBeam&&hero.ultimateCd>0&&!game[hero.heatVisionKey(game)],`${mode}: guard, flight and Nova coexist with charging while the click beam pauses`);
   hero.damage(20,-800,400,game);assert(hero.chargingBeam&&hero.flying,'blocked hits must preserve an ongoing Super Beam charge');
   game.input.keys.delete(' ');game.input.released.add(' ');hero.beamCharge=.5;hero.update(SIM_STEP,game);game.input.clear();
   assert(!hero.chargingBeam&&hero.guardTimer>0,'Super Beam release must not cancel a guard');
@@ -689,5 +689,68 @@ for(const [width,height] of [[1366,650],[960,540],[800,450],[640,360],[480,300]]
   game.w=width;game.h=height;const layout=game.hudLayout();assert(layout.panelX>=layout.resourceWidth+24);assert(layout.panelX+layout.panelWidth<=width-10);if(layout.compact)assert(50+206*layout.scale<=height-Math.min(90,height*.22)-10,'charging bar must fit above footer');
 }
 game.w=1280;game.h=720;
+// v0.10: exact beam width, charge payoff, shared animation phase and recovery UI.
+const {beamRect,superBeamWidth,superBeamDamage,prepareStageTextures,VERSION}=vm.runInContext('({beamRect,superBeamWidth,superBeamDamage,prepareStageTextures,VERSION})',sandbox);
+assert.equal(VERSION,'0.10');assert.equal(document.getElementById('buildLabel').textContent,'Version 0.10');
+assert.equal(beamRect(-1,-1,-Math.SQRT1_2,-Math.SQRT1_2,{x:0,y:0,w:1,h:1},100,1),null,'rounded corners must not falsely hit inside an inflated square');
+assert.notEqual(beamRect(0,0,1,0,{x:101,y:1,w:2,h:2},100,2),null,'finite beam end cap must hit within its colored radius');
+assert.equal(beamRect(0,0,1,0,{x:103,y:0,w:2,h:2},100,2),null,'beam width cannot extend damage beyond its finite end cap');
+assert.equal(beamRect(0,0,1,0,{x:20,y:0,w:4,h:4},100,0),rayRect(0,0,1,0,{x:20,y:0,w:4,h:4},100));
+for(const mode of ['classic','stage2','stage3','training'])for(const facing of [-1,1])for(const angle of [0,.7,Math.PI/2]){
+  game.setGodMode(false);game.startMode(mode);const h=game.activeHero,dx=facing*Math.cos(angle),dy=Math.sin(angle);
+  const trace={origin:{x:1000,y:600},dx,dy,range:CFG.superBeamRange};h.traceHeatVision=()=>trace;
+  const target={x:trace.origin.x+dx*300-dy*15-2,y:trace.origin.y+dy*300+dx*15-2,w:4,h:4,dead:false,hp:10000,hit(d){this.hp-=d;}};
+  game.activeEnemies.length=0;game.activeEnemies.push(target);h.fireSuperBeam(game,1);
+  assert.equal(10000-target.hp,superBeamDamage(1),mode+': colored Super Beam width must damage overlapping targets');
+  assert.equal(game.activeBeams.at(-1).width,superBeamWidth(1));
+  target.x-=dy*40;target.y+=dx*40;target.hp=10000;h.fireSuperBeam(game,1);
+  assert.equal(target.hp,10000,'decorative glow must not enlarge the damaging core');
+  delete h.traceHeatVision;
+}
+function chargeBenchmark(period,click,fps=120){
+  game.setGodMode(false);game.startMode('training');const h=game.activeHero;
+  Object.assign(h,{x:1500,y:5000,flying:true,onGround:false,energy:10000});
+  const target={x:1800,y:5000,w:100,h:200,dead:false,hp:1e8,hit(d){this.hp-=d;}};
+  game.activeEnemies.length=0;game.activeEnemies.push(target);const steps=Math.round(period*fps),ticks=fps*13;
+  for(let i=0;i<ticks;i++){
+    target.x=h.x+300;target.y=h.y-50;game.input.mouse.x=target.x+50-game.camera.x;game.input.mouse.y=h.y+30-game.camera.y;game.input.mouse.down=click;
+    if(i%steps===0){game.input.keys.add(' ');game.input.pressed.add(' ');}
+    if(i%steps===steps-1){game.input.keys.delete(' ');game.input.released.add(' ');}
+    h.update(1/fps,game);game.input.endFrame();
+    if(h.chargingBeam)assert.equal(game[h.heatVisionKey(game)],null,'continuous beam cannot stack while charging');
+  }
+  game.input.clear();return (1e8-target.hp)/13;
+}
+for(const fps of [30,60,120,144]){
+  const partial=chargeBenchmark(.34,false,fps),full=chargeBenchmark(1.3,false,fps),combined=chargeBenchmark(.34,true,fps);
+  assert(full>partial*1.5,'full charging must have a meaningful DPS payoff at '+fps+' Hz');
+  assert(combined<partial+CFG.heatVisionDamage/(.34*fps)+5,'mouse+Space cannot retain the old damage stacking exploit');
+}
+for(const mode of ['classic','stage2','stage3','training']){
+  game.startMode(mode);const h=game.activeHero;Object.assign(h,{onGround:true,vx:CFG.runMax,walkCycle:2.2,shootAnim:0});
+  const frame=image=>{const args=drawImageCalls.find(a=>a[0]===image&&a.length===9);return args[1]/args[3]+4*args[2]/args[4];};
+  h.boosting=false;drawImageCalls=[];h.draw(context2d,game);const walking=frame(SPRITES.astraWalk);
+  h.boosting=true;drawImageCalls=[];h.draw(context2d,game);assert.equal(frame(SPRITES.astraSprint),walking,'Shift must preserve footstep phase');
+  Object.assign(h,{flying:true,onGround:false,vx:0,vy:-CFG.speedFlyMax,boosting:true,launchBurst:.2});
+  const takeoff=h.flightArmAnchor();assert.equal(takeoff.reach,0);assert.equal(h.launchReleaseMix(),0);
+  h.launchBurst=.1;assert(h.launchReleaseMix()>0&&h.launchReleaseMix()<1);const middle=h.flightArmAnchor();assert(Number.isFinite(middle.x)&&Number.isFinite(middle.y));
+  h.launchBurst=0;const normal=h.flightArmAnchor();assert(Math.abs(takeoff.x-normal.x)>5,'launch palm must use the dedicated takeoff art/transform');
+}
+const releasedCanvas={width:100,height:100};SPRITES.stage2Map.tints=new Map([['old',releasedCanvas]]);
+prepareStageTextures('stage3');assert.equal(releasedCanvas.width,0);assert.equal(SPRITES.stage2Map.tints.size,0,'stage changes release unused graded canvases');
+assert(SPRITES.stage2Map.src,'original image remains available after cache release');
+game.settings.rangeCollapsed=true;game.settings.showControls=false;game.settings.save();const savedSettings=new DisplaySettings();
+assert(savedSettings.rangeCollapsed&&!savedSettings.showControls,'Training panel and hints preferences persist');
+vm.runInContext('syncTrainingPanel();syncDisplaySettings();',sandbox);assert(document.getElementById('trainingBody').hidden);assert(document.getElementById('controls').hidden);
+game.settings.rangeCollapsed=false;game.settings.showControls=true;vm.runInContext('syncTrainingPanel();syncDisplaySettings();',sandbox);
+game.settings.quality='auto';game.settings.reducedMotion=false;game.autoLow=false;game.slowFrames=0;
+for(let i=0;i<60;i++)game.updateAutoQuality(2,1/60,true);assert(game.autoLow,'slow frame intervals must reduce AUTO quality even with cheap Canvas submission');
+const retryLoaded=new MockImage();markSpriteLoaded(retryLoaded);retryLoaded.readyPromise=Promise.resolve(true);
+game.failedArtwork=[retryLoaded];game.assetFailures=1;game.syncArtworkNotice();assert(!document.getElementById('assetNotice').hidden);
+const retainedHero=game.activeHero;await game.retryArtwork();assert.equal(game.activeHero,retainedHero,'artwork retry must not reset the mission');assert.equal(game.assetFailures,0);assert(document.getElementById('assetNotice').hidden);
+const priorityAudio=new AudioFX();priorityAudio.musicPaused=false;priorityAudio.muted=false;priorityAudio.sfxVolume=.65;
+for(let i=0;i<40;i++)priorityAudio.tone(200,.1);assert.equal(priorityAudio.activeVoices.size,28,'cosmetic sounds must leave warning voice headroom');
+for(let i=0;i<10;i++)priorityAudio.warning(200,.1);assert.equal(priorityAudio.activeVoices.size,32,'warning headroom remains bounded');
+game.input.clear();game.setGodMode(false);game.restart();
 assert.equal(contextDepth,0,'all regression drawing must restore Canvas state');
 console.log('Mastra Vanguard smoke tests: PASS (including all-stage Prism Guard, 30/60/120/144 Hz, results, loading, pooling, accessibility and Training Range sandbox)');

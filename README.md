@@ -6,23 +6,13 @@ Mastra Vanguard is a three-stage 2D superhero action-platformer spanning Meridia
 
 This is a long-term creative game project developed with Codex and GPT-5.6.
 
-## Version 0.9 highlights
+## Version 0.10 highlights
 
-- Cleaner flight poses and cape animation
-- Fairer hazard hitboxes and more reliable range controls/spawning
-- Lighter loading, recoverable AUTO effects quality, and expanded tests
+- Fairer beam hitboxes and stronger full-charge Super Beam
+- Smoother animation timing, lighter artwork, and clearer boss warnings
+- Recoverable artwork loading, compact Training controls, and expanded tests
 
-## Version 0.8 highlights
-
-- New Training Range with enemy spawning and all three boss previews
-- Fixed range boundaries, resets, revival, and controls
-- Smoother airborne laser animations
-
-## Version 0.7 highlights
-
-- Smoother movement, stronger Sonic Boom, and clearer boss attacks
-- Faster stage loading, lighter effects, and accessibility settings
-- Mission results and fixes across all three stages
+Older releases: [Changelog](CHANGELOG.md).
 
 ## Training Range
 
@@ -33,54 +23,13 @@ This is a long-term creative game project developed with Codex and GPT-5.6.
 - Boss previews use matching combat floors; Refill Powers also revives Astra after defeat
 - Ground targets require a nearby deck; use flying targets while exploring open space
 
-## Version 0.6 highlights
-
-- Global God Mode toggle with unlimited Prism Nova charges
-- 50% larger Prism Nova range
-- Stage 1 naming and menu polish
-
-## Version 0.5 highlights
-
-- New Stage 3: Eclipse Foundry
-- Unique Solar Legionnaire, Flux Manta, Forge Weaver, and Heliarch Zero boss
-- New map art, enemy/boss visuals, VFX, and polished Stage 3 combat
-
-## Version 0.4 highlights
-
-- Power Launch and dedicated vertical-flight poses
-- Upgraded walk, sprint, and wind-flowing idle animation
-- Full-range piercing Super Beam in both stages
-- Refined boss effects, combat, hitboxes, and movement
-
-## Version 0.3 highlights
-
-- New Astral Devourer model and animations
-- Smoother Stage 2 enemy movement
-- Fixed wall and ledge stalls
-- Rebalanced minion and boss combat
-
-## Version 0.2 highlights
-
-- New alien-world Stage 2
-- Animated alien enemies and scenery
-- Three-phase Astral Devourer boss
-- Continuous piercing heat vision
-
-## Version 0.1 highlights
-
-- Stage 1 campaign and Prism Warden boss fight
-- Stage 1 and God Mode
-- Flight, Shift super speed, Super Beam, and Prism Nova ultimate
-- Animated Astra, shock troopers, drones, boss, and city scenery
-- Original Meridian City art, music, sound effects, and pause-menu audio controls
-
 ## Play locally
 
 Open `index.html` in a modern desktop browser. No install or build step is needed.
 
 Run `node tools/smoke-test.mjs` for the gameplay smoke tests.
 
-Optional browser QA: `node tools/browser-audit.mjs` with an existing Playwright installation. Set `PLAYWRIGHT_MODULE` to its module directory and `BROWSER_PATH` to a Chrome/Chromium executable if needed. Reports and screenshots go to the ignored `artifacts/browser-audit/` directory. No browser-test dependency is required to play.
+Optional browser QA: `node tools/browser-audit.mjs` with an existing Playwright installation. Set `PLAYWRIGHT_MODULE` to its module directory and `BROWSER_PATH` to a Chrome/Chromium executable if needed. Reports and screenshots go to the ignored `artifacts/browser-audit/` directory. No browser-test dependency is required to play. Optional flight/HUD and release checks: `node tools/flight-hud-audit.mjs` and `node tools/release-audit.mjs` using the same environment overrides.
 
 ## Controls
 
@@ -104,10 +53,12 @@ Gameplay controls follow physical key positions, independently of the typing lay
 
 **Flight:** hold S to dive up to 45% faster than climbing; Shift + S reaches Sonic Boom in about 0.5 seconds from a hover when energy and cooldown allow. Hold W to pull up, or release movement to brake toward a stable hover. Applies in every stage.
 
+Super Beam: full charges now deal more damage than rapid partial charges. Charging pauses the click beam; both beams damage within their colored core, not the decorative glow.
+
 Airborne beams keep Astra's flight body and size consistent while his firing arm follows your aim. Diagonal travel uses sideways flight; straight ascent/descent uses the vertical poses. Ground shooting is unchanged.
 
-The HUD automatically compacts for smaller browser windows. Menus and Training Range controls scroll when needed, so fullscreen is optional.
+The HUD automatically compacts for smaller browser windows. Training controls can be minimized, and the controls hint can be hidden in Settings. Artwork failures show a retry option without restarting the mission. Settings displays the current version.
 
-Open **Settings** from the main menu or pause with `Esc` to adjust audio and visual preferences. AUTO effects reduce cosmetic work after sustained slow rendering; all quality levels preserve attack warnings. Reduced-motion system preferences supply the initial accessibility defaults. `R` restarts after defeat/completion; use the pause menu to restart an active mission.
+Open **Settings** from the main menu or pause with `Esc` to adjust audio and visual preferences. AUTO effects account for simulation, rendering and sustained slow frames; all quality levels preserve attack warnings. Reduced-motion system preferences supply the initial accessibility defaults. `R` restarts after defeat/completion; use the pause menu to restart an active mission.
 
 Project history and the original design brief: [`BENCHMARK_PROMPT.md`](BENCHMARK_PROMPT.md).
