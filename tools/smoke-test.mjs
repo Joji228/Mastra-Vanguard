@@ -123,7 +123,7 @@ game.player.onGround=true;game.player.updateJumpAssist(.016,game);game.player.on
 markSpriteLoaded(SPRITES.astraFlight);markSpriteLoaded(SPRITES.astraFlightUp);markSpriteLoaded(SPRITES.astraFlightDown);game.player.onGround=true;game.input.pressed.add('f');game.player.update(.016,game);assert.equal(game.player.flying,true,'F must enable flight');drawImageCalls=[];game.player.draw(context2d,game);assert(drawImageCalls.some(args=>args[0]===SPRITES.astraFlight),'toggling F must use the default sideways flight animation');assert(!drawImageCalls.some(args=>args[0]===SPRITES.astraFlightUp||args[0]===SPRITES.astraFlightDown),'F toggle alone must not select a vertical flight pose');game.input.clear();game.player.vx=0;game.player.vy=-CFG.flyMax;game.input.keys.add('w');game.player.updateFlightPose(.3);drawImageCalls=[];game.player.draw(context2d,game);assert(drawImageCalls.some(args=>args[0]===SPRITES.astraFlightUp),'active ascent must use the straight-up flight pose');game.input.clear();game.player.vy=CFG.flyMax;game.input.keys.add('s');game.player.updateFlightPose(.3);drawImageCalls=[];game.player.draw(context2d,game);assert(drawImageCalls.some(args=>args[0]===SPRITES.astraFlightDown),'active descent must use the straight-down flight pose');game.input.clear();game.reset();
 game.player.flying=true;game.player.vx=0;game.player.vy=0;game.player.updateFlightVelocity(.016,0,1,CFG.flyAccel,CFG.flyMax);const descentStep=game.player.vy;assert(descentStep>0&&descentStep<CFG.flyMax*.1,'flight descent must ease toward its target instead of snapping to max speed');game.player.vy=0;game.player.updateFlightVelocity(.016,0,-1,CFG.flyAccel,CFG.flyMax);assert(game.player.vy<0&&Math.abs(game.player.vy)<descentStep,'flight direction changes must decelerate smoothly without overshooting');game.player.vy=500;game.player.updateFlightVelocity(.016,0,-1,CFG.flyAccel,CFG.flyMax);assert(game.player.vy>0&&game.player.vy<500,'flight reversals must bleed speed smoothly instead of flipping direction in one frame');game.player.flying=false;
 game.launchWaves.length=0;const landingTarget=game.enemies[0],landingTargetHp=landingTarget.hp,machImpact=CFG.flightLandingShockwaveSpeed+100;game.player.onGround=false;game.player.y=1253.5;game.player.vy=machImpact;game.player.speedBuild=CFG.sonicThreshold;game.player.sonicBoomTriggered=true;game.player.update(.016,game);assert(game.player.onGround,'a Mach descent test must land on the Stage One floor');const landingWave=game.launchWaves.find(w=>w.impact);assert(landingWave,'a Mach-speed landing must create an impact shockwave');assert(landingWave.damage>0&&landingWave.damageRadius>0,'landing shockwave must carry explicit radial damage');assert(landingTarget.hp<landingTargetHp,'a nearby Stage One enemy must take landing shockwave damage');markSpriteLoaded(SPRITES.astraMachLanding);drawImageCalls=[];game.draw();assert(drawImageCalls.some(args=>args[0]===SPRITES.astraMachLanding),'Mach landing must render the generated four-frame VFX sheet');assert.equal(contextDepth,0,'custom landing shockwave graphics must balance canvas state');game.launchWaves.length=0;const controlledTargetHp=landingTarget.hp;game.player.onGround=false;game.player.y=1253.5;game.player.vy=machImpact;game.player.speedBuild=0;game.player.sonicBoomTriggered=false;game.player.update(.016,game);assert(game.player.onGround,'a non-Mach fast descent test must land on the Stage One floor');assert(!game.launchWaves.some(w=>w.impact),'speed alone must not create a landing shockwave without reaching Mach state');assert.equal(landingTarget.hp,controlledTargetHp,'a non-Mach landing must not deal shockwave damage');game.reset();
-game.player.onGround=true;game.player.vx=CFG.runMax;game.player.updateLocomotion(.12);assert(game.player.groundMotion>.7,'Astra must smoothly enter the upgraded walk cycle');markSpriteLoaded(SPRITES.astraWalk);markSpriteLoaded(SPRITES.astraSprint);drawImageCalls=[];game.player.draw(context2d,game);assert(drawImageCalls.some(args=>args[0]===SPRITES.astraWalk),'Astra walking must use the dedicated eight-frame walk sheet');game.player.boosting=true;game.player.updateLocomotion(.12);assert(game.player.sprintMotion>.7,'Astra must smoothly enter the upgraded sprint cycle');drawImageCalls=[];game.player.draw(context2d,game);assert(drawImageCalls.some(args=>args[0]===SPRITES.astraSprint),'Astra sprinting must use the dedicated eight-frame sprint sheet without frame blending');game.player.onGround=false;game.player.boosting=false;game.player.updateLocomotion(.25);assert(game.player.groundMotion<.1&&game.player.sprintMotion<.1,'Astra locomotion must smoothly settle when leaving the ground');game.player.vx=0;
+game.player.onGround=true;game.player.vx=CFG.runMax;game.player.updateLocomotion(.12);assert(game.player.groundMotion>.7,'Astra must smoothly enter the upgraded walk cycle');markSpriteLoaded(SPRITES.astraWalk);markSpriteLoaded(SPRITES.astraSprint);drawImageCalls=[];game.player.draw(context2d,game);assert(drawImageCalls.some(args=>args[0]===SPRITES.astraWalk),'Astra walking must use the dedicated eight-frame walk sheet');game.player.boosting=true;game.player.updateLocomotion(.12);assert(game.player.sprintMotion>.7,'Astra must smoothly enter the upgraded sprint cycle');assert(!game.player.sprintSheet,'Shift at unchanged walking speed must not pop into sprint artwork');game.player.vx=CFG.speedRunMax;game.player.walkCycle=0;game.player.updateLocomotion(.12);drawImageCalls=[];game.player.draw(context2d,game);assert(drawImageCalls.some(args=>args[0]===SPRITES.astraSprint),'actual sprint speed must use the dedicated eight-frame sheet at a planted-foot beat');game.player.onGround=false;game.player.boosting=false;game.player.updateLocomotion(.25);assert(game.player.groundMotion<.1&&game.player.sprintMotion<.1,'Astra locomotion must smoothly settle when leaving the ground');game.player.vx=0;
 game.reset();game.player.onGround=true;game.input.keys.add('shift');game.input.keys.add('w');game.player.update(.016,game);assert(game.player.launchCharging,'Shift + W must begin a grounded power-launch charge');assert.equal(game.player.vx,0,'power-launch charge must lock horizontal movement');game.player.draw(context2d,game);assert.equal(contextDepth,0,'power-launch charge drawing must balance canvas state');game.input.keys.delete('w');game.player.update(.016,game);assert.equal(game.player.launchCharging,false,'releasing the combo during charge must cancel cleanly');assert.equal(game.player.flying,false,'cancelled power launch must not toggle flight');game.input.clear();game.reset();game.player.onGround=true;game.input.keys.add('shift');game.input.keys.add('w');for(let i=0;i<30;i++)game.player.update(1/30,game);assert.equal(game.player.flying,true,'completed power launch must enable flight');assert.equal(game.player.speedBuild,1,'power launch must start at maximum boost build');assert(Math.hypot(game.player.vx,game.player.vy)>CFG.speedFlyMax*.95,'power launch must use maximum boosted flight speed');assert(game.launchWaves.length===1,'power launch must create one takeoff shockwave');game.player.draw(context2d,game);assert.equal(contextDepth,0,'power-launch burst drawing must balance canvas state');game.input.clear();
 assert.equal(game.player.vx,0,'completed power launch must travel perfectly straight upward');
 assert.equal(game.player.vy,-CFG.speedFlyMax,'completed power launch must use maximum boosted flight speed vertically');
@@ -365,7 +365,7 @@ const loadFailure=new MockImage();loadFailure.pendingSrc='missing.png';const rea
 
 // Sweep telegraph has no active damage; its live ray uses the same visible beam width.
 game.startMode('stage3');game.stage3Boss=new HeliarchZero(6000,800);game.stage3Encounter='boss-fight';
-const sweep=new HeliarchSweep(game.stage3Boss,0);game.stage3Hero.x=game.stage3Boss.cx+100;game.stage3Hero.y=game.stage3Boss.cy-20;
+const sweep=new HeliarchSweep(game.stage3Boss,0);game.stage3Hero.x=game.stage3Boss.cx+100;game.stage3Hero.y=game.stage3Boss.attackOrigin().y-20;
 const sweepHp=game.stage3Hero.hp;sweep.update(.1,game);assert.equal(game.stage3Hero.hp,sweepHp,'sweep warning must be harmless');
 sweep.life=sweep.active/2;sweep.update(0,game);assert(game.stage3Hero.hp<sweepHp,'active sweep must hit visible overlapping targets');
 assert(html.includes('angle=warning?this.startAngle'),'sweep warning must point toward the first active angle');
@@ -470,7 +470,7 @@ for(const fps of [30,60,120,144]){
 // A real continuous boss sweep is blocked without changing the boss or its attack schedule.
 game.setGodMode(false);game.startMode('stage3');game.stage3Boss=new HeliarchZero(6000,800);game.stage3Encounter='boss-fight';
 const guardSweep=new HeliarchSweep(game.stage3Boss,0),guardHero=game.activeHero;
-guardHero.x=game.stage3Boss.cx+100;guardHero.y=game.stage3Boss.cy-20;guardHero.castPrismGuard(game);
+guardHero.x=game.stage3Boss.cx+100;guardHero.y=game.stage3Boss.attackOrigin().y-20;guardHero.castPrismGuard(game);
 const bossState=game.stage3Boss.state,bossHP=game.stage3Boss.hp;guardSweep.life=guardSweep.active/2;guardSweep.update(0,game);
 assert.equal(guardHero.hp,CFG.maxHp);assert(guardHero.guardPerfect);assert.equal(game.stage3Boss.state,bossState);assert.equal(game.stage3Boss.hp,bossHP);
 
@@ -577,7 +577,8 @@ for(const mode of ['classic','stage2','stage3']){
   assert(!hero.hasFlightShotArt()&&drawImageCalls.some(args=>args[0]===SPRITES.astraFlight),'missing arm art preserves the flight body and procedural arm fallback');
   markSpriteLoaded(SPRITES.astraFlightShoot);
   hero.flying=false;hero.aimAngle=0;drawImageCalls=[];hero.draw(context2d,game);
-  assert(!drawImageCalls.some(args=>args[0]===SPRITES.astraFlightShoot),'ground shooting must stay unchanged');
+  assert(drawImageCalls.some(args=>args[0]===SPRITES.astraFlightShoot),'ground shooting shares the independent aiming arm');
+  assert(!drawImageCalls.some(args=>args[0]===SPRITES.astraAim||args[0]===SPRITES.astraBeam),'firing cannot replace the complete grounded body');
 }
 // Training Range is an isolated sandbox: it shares Astra and combat classes but
 // never participates in campaign progression or score persistence.
@@ -691,7 +692,7 @@ for(const [width,height] of [[1366,650],[960,540],[800,450],[640,360],[480,300]]
 game.w=1280;game.h=720;
 // v0.10: exact beam width, charge payoff, shared animation phase and recovery UI.
 const {beamRect,superBeamWidth,superBeamDamage,prepareStageTextures,VERSION}=vm.runInContext('({beamRect,superBeamWidth,superBeamDamage,prepareStageTextures,VERSION})',sandbox);
-assert.equal(VERSION,'0.10');assert.equal(document.getElementById('buildLabel').textContent,'Version 0.10');
+assert.equal(VERSION,'0.11');assert.equal(document.getElementById('buildLabel').textContent,'Version 0.11');
 assert.equal(beamRect(-1,-1,-Math.SQRT1_2,-Math.SQRT1_2,{x:0,y:0,w:1,h:1},100,1),null,'rounded corners must not falsely hit inside an inflated square');
 assert.notEqual(beamRect(0,0,1,0,{x:101,y:1,w:2,h:2},100,2),null,'finite beam end cap must hit within its colored radius');
 assert.equal(beamRect(0,0,1,0,{x:103,y:0,w:2,h:2},100,2),null,'beam width cannot extend damage beyond its finite end cap');
@@ -729,8 +730,8 @@ for(const fps of [30,60,120,144]){
 for(const mode of ['classic','stage2','stage3','training']){
   game.startMode(mode);const h=game.activeHero;Object.assign(h,{onGround:true,vx:CFG.runMax,walkCycle:2.2,shootAnim:0});
   const frame=image=>{const args=drawImageCalls.find(a=>a[0]===image&&a.length===9);return args[1]/args[3]+4*args[2]/args[4];};
-  h.boosting=false;drawImageCalls=[];h.draw(context2d,game);const walking=frame(SPRITES.astraWalk);
-  h.boosting=true;drawImageCalls=[];h.draw(context2d,game);assert.equal(frame(SPRITES.astraSprint),walking,'Shift must preserve footstep phase');
+  h.boosting=false;h.sprintSheet=false;drawImageCalls=[];h.draw(context2d,game);const walking=frame(SPRITES.astraWalk);
+  h.boosting=true;h.sprintSheet=true;drawImageCalls=[];h.draw(context2d,game);assert.equal(frame(SPRITES.astraSprint),walking,'registered walk and sprint sheets must preserve footstep phase');
   Object.assign(h,{flying:true,onGround:false,vx:0,vy:-CFG.speedFlyMax,boosting:true,launchBurst:.2});
   const takeoff=h.flightArmAnchor();assert.equal(takeoff.reach,0);assert.equal(h.launchReleaseMix(),0);
   h.launchBurst=.1;assert(h.launchReleaseMix()>0&&h.launchReleaseMix()<1);const middle=h.flightArmAnchor();assert(Number.isFinite(middle.x)&&Number.isFinite(middle.y));
@@ -751,6 +752,142 @@ const retainedHero=game.activeHero;await game.retryArtwork();assert.equal(game.a
 const priorityAudio=new AudioFX();priorityAudio.musicPaused=false;priorityAudio.muted=false;priorityAudio.sfxVolume=.65;
 for(let i=0;i<40;i++)priorityAudio.tone(200,.1);assert.equal(priorityAudio.activeVoices.size,28,'cosmetic sounds must leave warning voice headroom');
 for(let i=0;i<10;i++)priorityAudio.warning(200,.1);assert.equal(priorityAudio.activeVoices.size,32,'warning headroom remains bounded');
+// Production HUD: bounded responsive cards, explicit Nova charges and cheap steady rendering.
+const hudMethods={fill:context2d.fill,fillText:context2d.fillText,createLinearGradient:context2d.createLinearGradient};
+let hudLabels=[],hudPips=[],hudGradientCalls=0;
+context2d.fill=()=>{if(context2d.fillStyle==='#b891f5'||context2d.fillStyle==='#26344e')hudPips.push(context2d.fillStyle);};
+context2d.fillText=label=>hudLabels.push(String(label));
+context2d.createLinearGradient=()=>{hudGradientCalls++;return gradient;};
+try{
+  for(const mode of ['classic','stage2','stage3','training']){
+    game.setGodMode(false);game.startMode(mode);game.intro=0;
+    for(const [width,height] of [[1920,950],[1536,750],[1280,720],[960,540],[640,360],[480,300]]){
+      game.w=width;game.h=height;const layout=game.hudLayout(),footerHeight=Math.min(90,height*.22);
+      assert(Number.isFinite(layout.heroX)&&Number.isFinite(layout.heroY)&&Number.isFinite(layout.heroHeight),'hero HUD must expose finite panel bounds');
+      assert(layout.heroX>=0&&layout.heroY>=0&&layout.heroX+layout.resourceWidth<=width,'hero resource panel must fit horizontally');
+      assert(layout.heroY+layout.heroHeight<=height-footerHeight-10,'hero panel, including charge feedback, must fit above controls');
+      assert(layout.panelX>=layout.heroX+layout.resourceWidth+12,'mission panel must stay clear of hero panel');
+      assert(layout.panelX+layout.panelWidth<=width-10&&layout.panelY+68<=height-footerHeight-10,'mission panel must remain inside its screen budget');
+      for(const [god,boosting,build,mach] of [[false,false,1,false],[false,true,1,true],[false,true,0,false],[true,false,1,false]]){
+        game.setGodMode(god);Object.assign(game.activeHero,{ultimateCharges:1,ultimateKills:2,boosting,speedBuild:build,chargingBeam:true,beamCharge:1,vx:mach?1600:0,vy:0});
+        hudLabels=[];hudPips=[];hudGradientCalls=0;const beforeDepth=contextDepth;
+        game.drawMissionHUD();
+        assert.equal(contextDepth,beforeDepth,mode+': HUD must balance every canvas save/restore');
+        assert.equal(hudGradientCalls,0,'resource/mission HUD must not create per-frame Canvas gradients');
+        assert.equal(hudPips.length,CFG.ultimateMaxCharges,'Nova must show three discrete charge slots');
+        assert.equal(hudPips.filter(color=>color==='#b891f5').length,god?3:1,'Nova pips must match normal charges or unlimited God Mode');
+        assert.equal(hudLabels.includes('MACH'),mach,'Mach label requires both active boost and Mach build');
+        assert(hudLabels.includes('SUPER BEAM')&&hudLabels.includes('MAX • RELEASE'),'max-charge HUD must retain release feedback');
+      }
+    }
+  }
+}finally{
+  Object.assign(context2d,hudMethods);game.w=1280;game.h=720;
+}
+
+// v0.11: audit fixes must affect gameplay and visible rendering, not only blend variables.
+const {ASTRA_POWER_LAUNCH}=vm.runInContext('({ASTRA_POWER_LAUNCH})',sandbox);
+for(const mode of ['classic','stage2','stage3','training']){
+  game.input.clear();game.setGodMode(false);game.startMode(mode);const h=game.activeHero;
+  Object.assign(h,{onGround:true,energy:10,speedEnergy:18});game.input.keys.add('shift');game.input.keys.add('w');
+  assert.equal(game.powerLaunchStatus(h).label,'LOW FLIGHT ENERGY',mode+': an exhausted takeoff must never report ready');
+  assert(!h.beginPowerLaunch(game),mode+': reject the formerly broken minimum-energy takeoff');
+  h.energy=ASTRA_POWER_LAUNCH.flightMinimum;h.speedEnergy=ASTRA_POWER_LAUNCH.speedMinimum-.01;
+  assert.equal(game.powerLaunchStatus(h).label,'LOW SPEED ENERGY');assert(!h.beginPowerLaunch(game));
+  h.speedEnergy=ASTRA_POWER_LAUNCH.speedMinimum;assert.equal(game.powerLaunchStatus(h).label,'READY');
+  const startY=h.y;assert(h.beginPowerLaunch(game));
+  for(let tick=0;tick<Math.ceil(h.launchDuration/SIM_STEP)+6;tick++)h.update(SIM_STEP,game);
+  assert(h.flying&&h.y<startY-30,mode+': minimum accepted reserves must produce a real upward launch');
+  assert(h.energy>0,'takeoff retains a usable flight reserve');game.input.clear();
+  game.restart();const godHero=game.activeHero;game.setGodMode(true);Object.assign(godHero,{onGround:true,energy:0,speedEnergy:0});
+  game.input.keys.add('shift');game.input.keys.add('w');assert(godHero.beginPowerLaunch(game),'God Mode waives both minimum reserves');
+  game.input.clear();game.setGodMode(false);game.restart();
+  const hero=game.activeHero,width=game.worldConfig.worldW;
+  for(const dir of [-1,1]){
+    Object.assign(hero,{x:dir<0?0:width-hero.w,y:500,vx:dir*CFG.speedFlyMax,vy:0});
+    game.moveThroughPlatforms(hero,SIM_STEP,[],width);assert.equal(hero.vx,0,mode+': world edges cancel outward velocity');
+    hero.vx=-dir*300;const x=hero.x;game.moveThroughPlatforms(hero,SIM_STEP,[],width);
+    assert.equal(hero.vx,-dir*300);assert((hero.x-x)*-dir>0,'turning back from an edge remains responsive');
+  }
+  for(const image of [SPRITES.astraWalk,SPRITES.astraSprint,SPRITES.astraFlightShoot,SPRITES.astraFlightUp,SPRITES.astraFlightDown])markSpriteLoaded(image);
+  Object.assign(hero,{x:1200,y:800,onGround:true,flying:false,vx:CFG.runMax,vy:0,boosting:false,shootAnim:.22,aimAngle:0});hero.updateLocomotion(.2);
+  drawImageCalls=[];hero.draw(context2d,game);
+  assert(drawImageCalls.some(a=>a[0]===SPRITES.astraWalk),mode+': ground firing must retain moving legs');
+  assert(!drawImageCalls.some(a=>a[0]===SPRITES.astraAim||a[0]===SPRITES.astraBeam),'aiming must not replace the complete moving body');
+  for(const vy of [-600,600]){
+    Object.assign(hero,{flying:true,onGround:false,vx:0,vy,launchBurst:0,flightHorizontalIntent:false});hero.updateFlightPose(SIM_STEP);
+    const pivot=hero.flightArmAnchor();game.input.mouse.x=pivot.x+500-game.camera.x;game.input.mouse.y=pivot.y-game.camera.y;
+    const trace=hero.traceHeatVision(game);assert(trace.dx>.99,'vertical-flight beams still aim sideways');
+    assert(hero.flightArmAnchor().reach>0,'vertical-flight firing uses a steerable arm rather than a fixed fist');
+    drawImageCalls=[];hero.draw(context2d,game);assert(drawImageCalls.some(a=>a[0]===SPRITES.astraFlightShoot),'all vertical poses render the independent aiming arm');
+  }
+  Object.assign(hero,{flying:true,vx:720,vy:0,boosting:false,launchBurst:0,aimAngle:0});const normal=hero.flightArmAnchor();
+  hero.boosting=true;const boosted=hero.flightArmAnchor();
+  assert(Math.hypot(normal.x-boosted.x,normal.y-boosted.y)<.01,'Shift alone cannot change flight body scale or muzzle placement');
+  Object.assign(hero,{flying:false,onGround:true,vx:CFG.runMax,vy:0,boosting:false,aimAngle:0,shootAnim:.22});
+  const palm=hero.beamOrigin();game.input.mouse.x=palm.x+500-game.camera.x;game.input.mouse.y=palm.y-game.camera.y;hero.fireHeatVision(SIM_STEP,game);
+  const movingBeam=game[hero.heatVisionKey(game)],simulationOrigin=movingBeam.x,nativeMove=context2d.moveTo;let renderedOrigin;
+  hero.x+=7;context2d.moveTo=(x,y)=>{renderedOrigin??={x,y};};
+  try{drawFlightBeam(context2d,movingBeam);}finally{context2d.moveTo=nativeMove;}
+  assert.equal(renderedOrigin.x,hero.beamOrigin().x,mode+': a grounded held beam tracks the interpolated palm');
+  assert.equal(movingBeam.x,simulationOrigin,'render interpolation leaves the simulation damage trace untouched');
+}
+game.input.clear();game.setGodMode(false);game.startMode('classic');game.startBossIntro();game.encounterState='boss-fight';
+Object.assign(game.player,{x:3980,y:1450-CFG.playerH,onGround:true,invuln:0,guardTimer:0});
+Object.assign(game.boss,{phase:2,hp:1200,phaseShield:0,attackSerial:0,x:4065,y:750});game.boss.chooseAttack(game);
+assert.equal(game.boss.state,'slam-windup');assert.equal(game.boss.slamTargetY+game.boss.h,1450,'Warden targets the actual bare arena floor');
+game.boss.stateTimer=0;game.boss.update(SIM_STEP,game);game.boss.stateTimer=0;game.boss.update(SIM_STEP,game);
+assert.equal(game.boss.y+game.boss.h,1450,'Warden must reach the floor instead of a stale vertical clamp');
+assert.equal(game.shockwaves.at(-1).y,1450,'slam shockwaves share the actual contact surface');
+game.player.x=game.boss.cx-20;game.player.invuln=0;const slamHp=game.player.hp;game.shockwaves.at(-1).update(0,game);
+assert(game.player.hp<slamHp,'grounded Astra must be hit by an overlapping floor shockwave');
+const auditStroke=context2d.stroke;let fallbackStrokes=0;context2d.stroke=()=>fallbackStrokes++;
+try{SPRITES.wardenVfx.complete=false;game.boss.setState('slam-windup',.5);game.boss.draw(context2d);assert(fallbackStrokes>=2,'failed slam art still leaves a destination marker and boss charge ring');}finally{context2d.stroke=auditStroke;markSpriteLoaded(SPRITES.wardenVfx);}
+Object.assign(game.player,{x:4300,y:1450-CFG.playerH});Object.assign(game.boss,{phase:2,hp:1200,attackSerial:0,x:4200,y:750});game.boss.chooseAttack(game);
+assert.equal(game.boss.slamFloor,1450,'walking in front of a building targets the supporting floor, not the roof above Astra');
+game.player.y=920-CFG.playerH;game.boss.stateTimer=0;game.boss.update(SIM_STEP,game);
+assert.equal(game.boss.slamTargetY+game.boss.h,1450,'moving during windup cannot move the already-telegraphed slam floor');
+game.startMode('training');game.spawnTrainingBoss('warden');const previewFloor=game.trainingPlatforms.find(p=>p.trainingBossFloor).y;
+Object.assign(game.boss,{phase:2,hp:1200,attackSerial:0});game.boss.chooseAttack(game);game.boss.stateTimer=0;game.boss.update(SIM_STEP,game);game.boss.stateTimer=0;game.boss.update(SIM_STEP,game);
+assert.equal(game.boss.y+game.boss.h,previewFloor,'Warden preview uses its own combat deck');
+game.startMode('stage3');game.startStage3BossIntro();game.stage3Encounter='boss-fight';
+const cornerHero=game.stage3Hero,cornerBoss=game.stage3Boss,sweepOrigin=cornerBoss.attackOrigin();
+Object.assign(cornerHero,{x:sweepOrigin.x+100,y:sweepOrigin.y+163,hp:100,invuln:0,guardTimer:0});
+const outsideSweep=new HeliarchSweep(cornerBoss,Math.PI/4);outsideSweep.life=outsideSweep.active/2;outsideSweep.update(0,game);
+assert.equal(cornerHero.hp,100,'diagonal sweep corners outside the colored core must not damage Astra');
+cornerHero.x=sweepOrigin.x+100;cornerHero.y=sweepOrigin.y+100;const insideSweep=new HeliarchSweep(cornerBoss,Math.PI/4);insideSweep.life=insideSweep.active/2;insideSweep.update(0,game);
+assert(cornerHero.hp<100,'exact sweep geometry still damages a real overlap');
+Object.assign(cornerBoss,{state:'hover',anim:0});const idleBody=cornerBoss.beamHitbox();
+for(const facing of [-1,1]){
+  Object.assign(cornerBoss,{state:'dash',facing,vx:facing*900,vy:200});const dashBody=cornerBoss.beamHitbox();
+  assert(dashBody.h<idleBody.h*.7,'horizontal dash cannot retain a tall empty-space hitbox');
+  assert(dashBody.w>0&&dashBody.h>0&&Number.isFinite(dashBody.x)&&Number.isFinite(dashBody.y));
+  const bodyScratch={};assert.equal(cornerBoss.combatBodyBounds(bodyScratch),bodyScratch,'hot combat geometry reuses its caller scratch');
+  const emitter=cornerBoss.attackOrigin(),sharedEmitter=new HeliarchSweep(cornerBoss,0).beamOrigin();
+  assert.equal(emitter.x,sharedEmitter.x);assert.equal(emitter.y,sharedEmitter.y,'sweep visual and damage origin use the same chest');
+}
+cornerBoss.setState('slam-impact',.22);const landingPose=cornerBoss.spritePose();
+assert(Math.abs(landingPose.y+(landingPose.anchor.contactY-landingPose.anchor.y)*landingPose.height/landingPose.anchor.cellH*landingPose.squash-(cornerBoss.y+cornerBoss.h))<1e-6,'Heliarch impact artwork lands at the physical contact plane');
+for(const facing of [-1,1]){
+  Object.assign(cornerBoss,{facing,anim:0,state:'lance-windup',vx:0,vy:0});const muzzle=cornerBoss.lanceOrigin(),chest=cornerBoss.attackOrigin();
+  assert(Math.abs(muzzle.x-chest.x-facing*54*390/512)<1e-6&&Math.abs(muzzle.y-chest.y+11*390/512)<1e-6,'lances use the authored firing palm, even while releasing windup');
+  game.stage3Projectiles.length=0;cornerBoss.fireLances(game);assert(game.stage3Projectiles.length>=3);
+  for(const projectile of game.stage3Projectiles){assert.equal(projectile.x,muzzle.x);assert.equal(projectile.y,muzzle.y,'projectiles share the visible hand emitter');}
+  cornerBoss.setState('dash-windup',.1);cornerBoss.stateTimer=0;cornerBoss.dashTargetX=chest.x+facing*360;cornerBoss.dashTargetY=chest.y;cornerBoss.update(0,game);
+  assert.equal(cornerBoss.state,'dash');assert(Math.abs(cornerBoss.vy)<1e-6&&Math.sign(cornerBoss.vx)===facing,'same-chest-height dash has a horizontal heading');
+}
+const {enemyFacing}=vm.runInContext('({enemyFacing})',sandbox);
+for(const enemy of [new SporeDrone(200,500),new FluxManta(200,500),new ForgeWeaver(200,500,0)]){
+  enemy.vx=-100;assert.equal(enemyFacing(enemy),-1);enemy.vx=0;assert.equal(enemyFacing(enemy),-1,'hovering preserves the last meaningful facing');enemy.vx=100;assert.equal(enemyFacing(enemy),1);
+}
+for(const enemy of [new SolarLegionnaire(200,1000),new FluxManta(200,500),new ForgeWeaver(200,500,0)]){
+  enemy.hit(5,game);assert(enemy.hitFx>0,enemy.constructor.name+': hit reaction sprite timer must actually start');
+  if(enemy instanceof SolarLegionnaire)enemy.guard=0; // Isolate the reaction; defensive/attack telegraphs retain priority.
+  markSpriteLoaded(SPRITES.stage3Legionnaire);markSpriteLoaded(SPRITES.stage3Manta);markSpriteLoaded(SPRITES.stage3Weaver);
+  drawImageCalls=[];enemy.draw(context2d);const image=enemy instanceof SolarLegionnaire?SPRITES.stage3Legionnaire:enemy instanceof FluxManta?SPRITES.stage3Manta:SPRITES.stage3Weaver;
+  const hitFrame=drawImageCalls.find(a=>a[0]===image&&a.length===9);assert(hitFrame,'hit feedback keeps each enemy visible');
+  assert.equal(hitFrame[1]/hitFrame[3]+4*hitFrame[2]/hitFrame[4],7,'the authored reaction frame must render');
+}
 game.input.clear();game.setGodMode(false);game.restart();
 assert.equal(contextDepth,0,'all regression drawing must restore Canvas state');
-console.log('Mastra Vanguard smoke tests: PASS (including all-stage Prism Guard, 30/60/120/144 Hz, results, loading, pooling, accessibility and Training Range sandbox)');
+console.log('Mastra Vanguard smoke tests: PASS (all-stage aiming/launch, fair boss geometry, 30/60/120/144 Hz, loading, UI, Guard and Training Range)');

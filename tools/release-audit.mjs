@@ -1,11 +1,11 @@
-// Optional v0.10 Chrome checks. Uses an existing Playwright installation only.
+// Optional release Chrome checks. Uses an existing Playwright installation only.
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {createRequire} from 'node:module';
 import {pathToFileURL} from 'node:url';
 const {chromium}=createRequire(import.meta.url)(process.env.PLAYWRIGHT_MODULE||'playwright');
-const root=process.cwd(),out=path.join(root,'artifacts','v0.10');await fs.mkdir(out,{recursive:true});
+const root=process.cwd(),html=await fs.readFile(path.join(root,'index.html'),'utf8'),version=html.match(/const VERSION='([^']+)';/)[1],out=path.join(root,'artifacts','v'+version);await fs.mkdir(out,{recursive:true});
 const browser=await chromium.launch({headless:true,...(process.env.BROWSER_PATH?{executablePath:process.env.BROWSER_PATH}:{})});
 const page=await browser.newPage({viewport:{width:1280,height:800}}),errors=[],report={normalBossBaselines:[],errors};
 page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
@@ -22,7 +22,7 @@ try{
   assert(await page.evaluate(()=>document.activeElement===game.canvas),'scrolled range controls return focus to gameplay');
   await page.click('#openSettings');await page.locator('#showControls').uncheck();await page.click('#resumeGame');
   assert(await page.locator('#controls').isHidden());
-  await page.click('#openSettings');assert.equal(await page.locator('#buildLabel').textContent(),'Version 0.10');
+  await page.click('#openSettings');assert.equal(await page.locator('#buildLabel').textContent(),'Version '+version);
   await page.locator('#showControls').check();await page.click('#resumeGame');
   await page.setViewportSize({width:1280,height:800});
   // Inject a decode failure through the image error listener, without a missing network request.
@@ -49,7 +49,7 @@ try{
         if(mode==='classic')game.startBossIntro();else if(mode==='stage2')game.startStage2BossIntro();else game.startStage3BossIntro();
         let ticks=0;const states=new Set();
         for(;ticks<120*45&&!h.dead&&!game.victory;ticks++){
-          const b=game.activeBoss;states.add(b.state);game.input.mouse.x=b.cx-game.camera.x;game.input.mouse.y=b.cy-game.camera.y;
+          const b=game.activeBoss,bounds=b.beamHitbox?b.beamHitbox():b;states.add(b.state);game.input.mouse.x=bounds.x+bounds.w/2-game.camera.x;game.input.mouse.y=bounds.y+bounds.h/2-game.camera.y;
           game.input.mouse.down=strategy==='click';
           if(strategy==='full-charge'){
             if(ticks%156===0){game.input.pressed.add(' ');game.input.keys.add(' ');}
@@ -79,7 +79,18 @@ try{
   });
   assert.equal(report.stress.startingEnemies,48);assert(report.stress.particles<=520);
   await page.screenshot({path:path.join(out,'crowded-range.png')});
+  await page.evaluate(async()=>{await Promise.all([SPRITES.astraSprint,SPRITES.astraFlightUp,SPRITES.astraFlightDown,SPRITES.astraFlightShoot].map(readySprite));});
+  report.aimCompositing=await page.evaluate(()=>{
+    const h=game.activeHero,mask=h.maskAuthoredAimArm,rows=[];let calls=0;
+    game.settings.reducedMotion=false;h.maskAuthoredAimArm=function(...args){calls++;return mask.apply(this,args);};
+    try{for(const pose of ['ground','up','down']){
+      Object.assign(h,{dead:false,invuln:0,launchCharging:false,launchBurst:0,flying:pose!=='ground',onGround:pose==='ground',vx:pose==='ground'?1200:0,vy:pose==='up'?-1600:pose==='down'?1600:0,boosting:true,sprintSheet:true,shootAnim:.22,chargingBeam:false,aimAngle:0,flightHorizontalIntent:false});
+      h.updateFlightPose(SIM_STEP);calls=0;h.draw(game.ctx,game);rows.push({pose,maskComposites:calls,surface:[h.aimBodySurface.width,h.aimBodySurface.height]});
+    }}finally{h.maskAuthoredAimArm=mask;}
+    return rows;
+  });
+  assert(report.aimCompositing.every(row=>row.maskComposites===1&&row.surface[0]===256&&row.surface[1]===192),'boost ghosts reuse one small arm composite per render pass: '+JSON.stringify(report.aimCompositing));
   assert.deepEqual(errors,[]);report.passed=true;
   await fs.writeFile(path.join(out,'release-audit.json'),JSON.stringify(report,null,2));
-  console.log('v0.10 release checks: PASS');console.log(JSON.stringify(report,null,2));
+  console.log('v'+version+' release checks: PASS');console.log(JSON.stringify(report,null,2));
 }finally{await browser.close();}

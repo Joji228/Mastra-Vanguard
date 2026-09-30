@@ -6,11 +6,11 @@ Mastra Vanguard is a three-stage 2D superhero action-platformer spanning Meridia
 
 This is a long-term creative game project developed with Codex and GPT-5.6.
 
-## Version 0.10 highlights
+## Version 0.11 highlights
 
-- Fairer beam hitboxes and stronger full-charge Super Beam
-- Smoother animation timing, lighter artwork, and clearer boss warnings
-- Recoverable artwork loading, compact Training controls, and expanded tests
+- Smoother Astra aiming, movement animations, and reliable Power Launch
+- Fairer boss attacks, aligned sprites, and clearer enemy reactions
+- Polished responsive menus/HUD and expanded regression tests
 
 Older releases: [Changelog](CHANGELOG.md).
 
@@ -29,7 +29,7 @@ Open `index.html` in a modern desktop browser. No install or build step is neede
 
 Run `node tools/smoke-test.mjs` for the gameplay smoke tests.
 
-Optional browser QA: `node tools/browser-audit.mjs` with an existing Playwright installation. Set `PLAYWRIGHT_MODULE` to its module directory and `BROWSER_PATH` to a Chrome/Chromium executable if needed. Reports and screenshots go to the ignored `artifacts/browser-audit/` directory. No browser-test dependency is required to play. Optional flight/HUD and release checks: `node tools/flight-hud-audit.mjs` and `node tools/release-audit.mjs` using the same environment overrides.
+Optional browser QA: `node tools/browser-audit.mjs` with an existing Playwright installation. Set `PLAYWRIGHT_MODULE` to its module directory and `BROWSER_PATH` to a Chrome/Chromium executable if needed. Reports and screenshots go to the ignored `artifacts/browser-audit/` directory. No browser-test dependency is required to play. Focused checks: `node tools/flight-hud-audit.mjs`, `node tools/release-audit.mjs`, `node tools/ui-fit-audit.mjs` and `node tools/ui-polish-audit.mjs` using the same environment overrides.
 
 ## Controls
 
@@ -47,7 +47,7 @@ Gameplay controls follow physical key positions, independently of the typing lay
 | `V` | Prism Nova |
 | `Q` | Prism Guard (timed shield) |
 | `Esc` | Pause |
-| `R` | Restart |
+| `R` | Retry after defeat / completion |
 
 **Prism Guard:** press Q for a 1-second animated shield without interrupting movement or flight. Costs 20 speed energy, with a 5-second cooldown. Block within the first 0.2 seconds to recover 10% flight energy (once per cast). Custom sprites smoothly form, shimmer, turn gold on a perfect block, and dissolve. God Mode waives the energy cost; falling out of the map cannot be blocked.
 
@@ -55,9 +55,11 @@ Gameplay controls follow physical key positions, independently of the typing lay
 
 Super Beam: full charges now deal more damage than rapid partial charges. Charging pauses the click beam; both beams damage within their colored core, not the decorative glow.
 
-Airborne beams keep Astra's flight body and size consistent while his firing arm follows your aim. Diagonal travel uses sideways flight; straight ascent/descent uses the vertical poses. Ground shooting is unchanged.
+Beams preserve Astra's moving body and legs while his firing arm follows your aim, on the ground and in flight. Diagonal travel uses sideways flight; straight ascent/descent uses the vertical poses. Power Launch only reports ready when both energy reserves can sustain takeoff.
 
-The HUD automatically compacts for smaller browser windows. Training controls can be minimized, and the controls hint can be hidden in Settings. Artwork failures show a retry option without restarting the mission. Settings displays the current version.
+Menus and Settings fit a 1080p screen without scrolling, including normal browser chrome; small windows retain accessible scrolling. The HUD automatically compacts for smaller browser windows. Training controls can be minimized, and the controls hint can be hidden in Settings. Artwork failures show a retry option without restarting the mission. Settings displays the current version.
+
+The interface uses stage-colored mission cards, clear resource values, three Nova charge indicators and live Guard/Launch states. Navigate stage selection with arrow keys or Home/End, then Enter; Tab also reaches Settings, Sound and Fullscreen. Reduced motion applies to menu transitions as well as gameplay effects.
 
 Open **Settings** from the main menu or pause with `Esc` to adjust audio and visual preferences. AUTO effects account for simulation, rendering and sustained slow frames; all quality levels preserve attack warnings. Reduced-motion system preferences supply the initial accessibility defaults. `R` restarts after defeat/completion; use the pause menu to restart an active mission.
 

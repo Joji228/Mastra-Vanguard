@@ -2,6 +2,19 @@
 
 Date: 2026-09-29. Reviewed checkout: `d0b069b`, version 0.9.
 
+## v0.11 implementation follow-up — September 30
+
+- Reliable minimum-energy Power Launch, cancelled outward boundary velocity, and Mach feedback based on actual speed.
+- Registered Astra pelvis/feet, phase-aware walk/sprint transitions, and an independent aiming arm on ground/vertical flight. Continuous beams track the rendered palm without changing simulation damage.
+- Warden slams target and lock the real support floor; grounded shockwaves and missing-art floor warnings now work. Measured waist anchors stabilize its animation.
+- Heliarch beams/dash contacts follow structural body bounds, its sweep uses exact capsule geometry, and lances originate at the authored firing palm. Dash pursuit/warnings share its visible chest. Devourer dash banking matches both travel directions.
+- Brief minion hit reactions preserve attack telegraphs; hovering enemies retain facing; Stage 2 warnings reserve audio headroom.
+- Includes the local responsive menu/HUD polish and expanded regression coverage. Existing movement speeds, HP, maps, powers and source artwork remain.
+
+Some authored sprite effects still contain baked cutoffs/stray fragments. Source-art regeneration and new Stage 2 attack-transition frames are deferred; this release does not claim to recreate that artwork.
+
+Validation: expanded smoke tests pass, including 30/60/120/144 Hz cases. Real-Chrome campaign checks pass for all three completion paths and 30 repeated restarts, plus powers, Training Range, settings, fullscreen and artwork recovery, with no captured console/page errors. UI checks pass at seven window sizes and across 768 HUD states. Normal-mode scripted boss probes and a 48-target/boss stress scene also pass. Completion checks use assisted positioning/God Mode; they are not an unassisted human campaign playthrough. Aiming composites are reused across boost afterimages rather than regenerated for each ghost.
+
 ## v0.10 implementation follow-up
 
 The original audit below is retained as the pre-change record. The following fixes and polish have now been implemented:

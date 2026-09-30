@@ -1,5 +1,11 @@
 # Release history
 
+## Version 0.11
+
+- Smoother Astra aiming/animation and reliable Power Launch
+- Fairer boss attacks, aligned sprites, and clearer enemy reactions
+- Responsive menu/HUD polish and expanded regression tests
+
 ## Version 0.10
 
 - Fairer beam hitboxes and stronger full-charge Super Beam
