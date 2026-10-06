@@ -188,7 +188,7 @@ try{
     const saved=SPRITES.astraFlight.sheet,savedSurface=hero.flightSurface,source=document.createElement('canvas');source.width=64;source.height=64;hero.flightSurface=null;
     const paint=source.getContext('2d');paint.fillStyle='#ffffff';paint.fillRect(0,0,64,64);
     let minAlpha=255;
-    try{SPRITES.astraFlight.sheet=source;for(const phase of [.1,.25,.5,.75,.9]){hero.flightCapePhase=phase;hero.draw(game.ctx,game);minAlpha=Math.min(minAlpha,hero.flightSurface.getContext('2d').getImageData(128,110,1,1).data[3]);}}
+    try{SPRITES.astraFlight.sheet=source;for(const phase of [.1,.25,.5,.75,.9]){hero.flightCapePhase=phase;hero.draw(game.ctx,game);const scale=hero.flightSurface.width/256;minAlpha=Math.min(minAlpha,hero.flightSurface.getContext('2d').getImageData(128*scale,110*scale,1,1).data[3]);}}
     finally{SPRITES.astraFlight.sheet=saved;hero.flightSurface=savedSurface;}
     hero.chargingBeam=true;hero.beamCharge=.7;document.getElementById('trainingEnemyType').focus();
     const cancelsCharge=!hero.chargingBeam&&hero.beamCharge===0;

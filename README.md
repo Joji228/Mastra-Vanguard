@@ -22,6 +22,15 @@ Older releases: [Changelog](CHANGELOG.md).
 - Open flight shafts connect upper decks to the deep range; nearby target spawning is capped at 48
 - Boss previews use matching combat floors; Refill Powers also revives Astra after defeat
 - Ground targets require a nearby deck; use flying targets while exploring open space
+- Durable Practice Target, total damage / rolling 2-second DPS, and optional collision/combat hitbox overlays
+
+## Local polish updates
+
+- Consistent Nova/impact hitboxes, reliable dual-Shift controls, sharper flying/aiming sprites and animated jump/fall legs
+- Smoother 16-frame Crystal Stalker walking, last-hostile direction hints and boss recovery cues
+- Lighter stage loading, shared/culling-aware power effects and more consistent reduced-motion/flashing settings
+
+Optional bonuses (+300 each, never required): protect Stage 1's evacuation relay with **Q** nearby; destroy Stage 2's crystal node; disable Stage 3's reactor regulator to stop its warned vents. Beams or Nova can damage the last two. Skipping them never blocks a boss.
 
 ## Play locally
 
@@ -64,3 +73,5 @@ The interface uses stage-colored mission cards, clear resource values, three Nov
 Open **Settings** from the main menu or pause with `Esc` to adjust audio and visual preferences. AUTO effects account for simulation, rendering and sustained slow frames; all quality levels preserve attack warnings. Reduced-motion system preferences supply the initial accessibility defaults. `R` restarts after defeat/completion; use the pause menu to restart an active mission.
 
 Project history and the original design brief: [`BENCHMARK_PROMPT.md`](BENCHMARK_PROMPT.md).
+
+Focused QA for these local changes: `node tools/polish-features-audit.mjs` with the browser environment overrides above.

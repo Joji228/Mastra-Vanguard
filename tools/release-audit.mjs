@@ -89,7 +89,7 @@ try{
     }}finally{h.maskAuthoredAimArm=mask;}
     return rows;
   });
-  assert(report.aimCompositing.every(row=>row.maskComposites===1&&row.surface[0]===256&&row.surface[1]===192),'boost ghosts reuse one small arm composite per render pass: '+JSON.stringify(report.aimCompositing));
+  assert(report.aimCompositing.every(row=>row.maskComposites===1&&row.surface[0]===512&&row.surface[1]===384),'boost ghosts reuse one small 2x-resolution arm composite per render pass: '+JSON.stringify(report.aimCompositing));
   assert.deepEqual(errors,[]);report.passed=true;
   await fs.writeFile(path.join(out,'release-audit.json'),JSON.stringify(report,null,2));
   console.log('v'+version+' release checks: PASS');console.log(JSON.stringify(report,null,2));

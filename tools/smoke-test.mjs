@@ -889,5 +889,48 @@ for(const enemy of [new SolarLegionnaire(200,1000),new FluxManta(200,500),new Fo
   assert.equal(hitFrame[1]/hitFrame[3]+4*hitFrame[2]/hitFrame[4],7,'the authored reaction frame must render');
 }
 game.input.clear();game.setGodMode(false);game.restart();
+// Audit polish: physical modifiers, visual AOE bounds, optional events and range tools.
+game.startMode('classic');game.input.clear();
+const shiftEvent=code=>({code,key:'Shift',shiftKey:true,target:canvas,preventDefault(){}});
+keyDown(shiftEvent('ShiftLeft'));keyDown(shiftEvent('ShiftRight'));keyUp(shiftEvent('ShiftLeft'));
+assert(game.input.down('shift'),'releasing one Shift must preserve the other held Shift');
+assert(!game.input.release('shift'),'a partial modifier release cannot cancel a launch');
+keyUp(shiftEvent('ShiftRight'));assert(!game.input.down('shift'));assert(game.input.release('shift'));
+game.input.clear();assert.equal(game.input.shiftCodes.size,0);
+for(const mode of ['classic','stage2','stage3','training'])for(const key of ['astraFrames','astraAim','astraBeam'])assert(!stageAssets(mode).includes(SPRITES[key]),'obsolete hero sheets must not block stage loading');
+for(const mode of ['classic','stage2','stage3']){
+  game.setGodMode(false);game.startMode(mode);const h=game.activeHero;Object.assign(h,{x:1000,y:1000});const cx=h.x+h.w/2,cy=h.y+h.h/2;
+  const inside=new GroundEnemy(cx-20,cy+686),outside=new GroundEnemy(cx+CFG.ultimateRadius+3,cy-25);
+  if(mode==='classic')game.enemies=[inside,outside];else if(mode==='stage2')game.stage2Enemies=[inside,outside];else game.stage3Enemies=[inside,outside];
+  h.castUltimate(game);assert(inside.dead,mode+': Nova hits visible armor inside its outer radius');assert.equal(outside.hp,outside.maxHp,mode+': decorative range cannot hit outside the solid body');
+  const bonus=game.bonusEvent,kills=game.runStats.kills,score=game.score;
+  if(mode==='classic'){Object.assign(h,{x:bonus.x,y:bonus.y,guardTimer:1});bonus.update(.4,game);}else bonus.hit(1000,game);
+  assert(bonus.completed);assert.equal(game.score,score+300);assert.equal(game.runStats.kills,kills,'bonuses are not enemy kills or charge-farming sources');
+  bonus.complete(game);assert.equal(game.score,score+300,'bonus rewards must be one-shot');
+  game.restart();assert(!game.bonusEvent.completed,'restart resets bonus state');
+  if(mode==='classic')game.encounterState='boss-ready';else if(mode==='stage2')game.stage2Encounter='boss-ready';else game.stage3Encounter='boss-ready';
+  game.bonusEvent.update(.1,game);assert(!game.bonusEvent.enabled,'skipping a bonus never gates the boss');
+}
+game.startMode('stage3');game.setGodMode(false);const regulator=game.bonusEvent;
+Object.assign(game.activeHero,{x:regulator.x,y:regulator.y+regulator.h-CFG.playerH,invuln:0,guardTimer:0});regulator.update(3.4,game);
+const vent=game.stage3Hazards.at(-1);assert(vent&&vent.kind==='bonus');const ventHp=game.activeHero.hp;vent.update(.7,game);assert.equal(game.activeHero.hp,ventHp,'reactor warnings cannot damage early');
+game.startMode('training');game.setGodMode(false);assert.equal(game.bonusEvent,null);
+game.activeHero.x=14500;game.activeHero.y=520-CFG.playerH;game.spawnTrainingEnemies('dummy',1);game.spawnTrainingEnemies('trooper',1);
+const dummy=game.trainingEnemies.find(e=>e.immovable),farTrooper=game.trainingEnemies.find(e=>e instanceof GroundEnemy);assert(dummy&&farTrooper);
+for(let i=0;i<20;i++){dummy.update(SIM_STEP,game);farTrooper.update(SIM_STEP,game);}
+assert(dummy.x>13000&&farTrooper.x>13000,'all Training ground targets use the range world bounds, not Stage 1 bounds');
+const {dealPlayerDamage,effectPulse,effectMotion}=vm.runInContext('({dealPlayerDamage,effectPulse,effectMotion})',sandbox);
+game.resetTrainingDamage();game.trainingTime=0;dealPlayerDamage(dummy,100,game);assert.equal(game.trainingDamage,100);assert(!dummy.dead);assert.equal(game.score,0);
+game.trainingTime=1;dealPlayerDamage(dummy,100,game);assert.equal(game.trainingDamage,200);assert.equal(game.trainingDps(),200);
+game.trainingTime=3.1;assert.equal(game.trainingDps(),0,'rolling DPS must decay after combat stops');
+game.resetTrainingDamage();assert.equal(game.trainingDamage,0);assert.equal(game.trainingDps(),0);
+game.trainingDebug=true;game.drawTrainingHitboxes(context2d);game.restart();assert(!game.trainingDebug);
+game.settings.reducedFlashing=true;game.settings.reducedMotion=true;
+assert.equal(effectPulse(100,.5,.4,.011),effectPulse(500,.5,.4,.011));assert.equal(effectMotion(500),0);
+game.settings.reducedFlashing=false;game.settings.reducedMotion=false;
+game.startMode('classic');game.enemies=[new GroundEnemy(game.camera.x+game.w+500,game.activeHero.y+game.activeHero.h/2-26)];assert(game.remainingHostileHint().includes('→'),'last-hostile hints must point toward offscreen targets');
+game.enemies.push(new GroundEnemy(200,500),new GroundEnemy(400,500),new GroundEnemy(600,500));assert.equal(game.remainingHostileHint(),'Hostiles remaining','hints stay quiet while many enemies remain');
+game.startMode('training');const overkill=new GroundEnemy(0,0);game.resetTrainingDamage();dealPlayerDamage(overkill,999,game);assert.equal(game.trainingDamage,overkill.maxHp,'damage totals exclude overkill beyond actual enemy HP');
+game.startMode('classic');game.activeHero.flying=false;game.activeHero.onGround=false;game.activeHero.vy=-500;game.activeHero.update(SIM_STEP,game);assert(game.activeHero.airLegFold>0,'jump anticipation bends the legs without changing physics');
 assert.equal(contextDepth,0,'all regression drawing must restore Canvas state');
 console.log('Mastra Vanguard smoke tests: PASS (all-stage aiming/launch, fair boss geometry, 30/60/120/144 Hz, loading, UI, Guard and Training Range)');
