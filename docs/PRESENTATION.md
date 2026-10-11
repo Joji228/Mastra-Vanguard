@@ -15,6 +15,7 @@ Use **Mastra Vanguard** for the game, **Astra** for the hero, and **Stage 1 / St
 | Asset | Use |
 | --- | --- |
 | [mastra-vanguard-cover.jpg](media/mastra-vanguard-cover.jpg) | README header; generated promotional key art, 1600 × 640 |
+| [play-online.svg](media/play-online.svg) | Self-contained 240 × 52 play-link button; code-native SVG using the existing navy/cyan palette |
 | [stage1.jpg](media/stage1.jpg) | Meridian City, flight and continuous beam |
 | [stage2.jpg](media/stage2.jpg) | Alien Frontier, Prism Guard and Astral Devourer |
 | [stage3.jpg](media/stage3.jpg) | Eclipse Foundry, beam and Heliarch Zero |

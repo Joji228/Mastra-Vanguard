@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="52" viewBox="0 0 240 52" role="img" aria-labelledby="title desc">
+  <title id="title">Play Mastra Vanguard online</title>
+  <desc id="desc">A navy play button with cyan accents and a right-pointing arrow.</desc>
+  <defs>
+    <linearGradient id="surface" x2="1" y2="1">
+      <stop stop-color="#12344b"/>
+      <stop offset="1" stop-color="#0c1a30"/>
+    </linearGradient>
+    <linearGradient id="edge" x2="1">
+      <stop stop-color="#73e6f4"/>
+      <stop offset="1" stop-color="#458bc1"/>
+    </linearGradient>
+  </defs>
+  <rect x="1" y="1" width="238" height="50" rx="10" fill="url(#surface)" stroke="url(#edge)" stroke-width="1.5"/>
+  <path d="M25 18v16l12-8z" fill="#80eaff"/>
+  <text x="114" y="31" fill="#edfaff" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" letter-spacing="1" text-anchor="middle">PLAY ONLINE</text>
+  <path d="M203 26h13m-5-5 5 5-5 5" fill="none" stroke="#80eaff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
