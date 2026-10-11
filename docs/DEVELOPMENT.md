@@ -46,6 +46,7 @@ node tools/browser-audit.mjs
 | `ui-fit-audit.mjs` | Menu/settings fit across viewport sizes |
 | `ui-polish-audit.mjs` | HUD and interface state combinations |
 | `polish-features-audit.mjs` | Dual Shift, range damage readouts, optional events and animation caches |
+| `audit-fixes-test.mjs` | Gameplay focus after toolbar/canvas clicks, Reduced Flashing including fallback art, late loading, Retry and stage-switch recovery |
 
 Reports/screenshots are written to the ignored `artifacts/` directory. Automated campaign completion uses assisted positioning/God Mode: it is integration coverage, **not** an exhaustive unassisted playthrough or a guarantee of subjective balance. CPU Canvas-submission samples are not GPU/FPS measurements.
 
