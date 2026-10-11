@@ -10,6 +10,21 @@ const browser=await chromium.launch({headless:true,...(process.env.BROWSER_PATH?
 const page=await browser.newPage({viewport:{width:1280,height:800}}),errors=[],report={normalBossBaselines:[],errors};
 page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
 try{
+  // Keep one real stage asset unavailable until Retry. A synthetic decode error
+  // on an already-loaded image races automatic recovery and never tests Retry.
+  await page.addInitScript(()=>{
+    const NativeImage=window.Image;
+    window.Image=class extends NativeImage{
+      set src(value){
+        if(value.includes('boss-slam-energy-frames-v1')){
+          this.attempts=(this.attempts||0)+1;this.queuedSrc=value;
+          if(this.attempts===1){queueMicrotask(()=>this.dispatchEvent(new Event('error')));return;}
+        }
+        super.src=value;
+      }
+      get src(){return super.src||this.queuedSrc||'';}
+    };
+  });
   await page.goto(pathToFileURL(path.join(root,'index.html')).href);
   await page.click('#trainingMode');await page.waitForFunction(()=>game.started&&!game.loading);
   await page.click('#trainingCollapse');assert(await page.locator('#trainingBody').isHidden());
@@ -22,17 +37,11 @@ try{
   assert(await page.evaluate(()=>document.activeElement===game.canvas),'scrolled range controls return focus to gameplay');
   await page.click('#openSettings');await page.locator('#showControls').uncheck();await page.click('#resumeGame');
   assert(await page.locator('#controls').isHidden());
-  await page.click('#openSettings');assert.equal(await page.locator('#buildLabel').textContent(),'Version '+version);
+  await page.click('#openSettings');assert.equal(await page.locator('#buildLabel').textContent(),await page.evaluate(()=>'Version '+VERSION+' · '+VERSION_NOTE));
   await page.locator('#showControls').check();await page.click('#resumeGame');
   await page.setViewportSize({width:1280,height:800});
-  // Inject a decode failure through the image error listener, without a missing network request.
-  await page.evaluate(async()=>{
-    game.paused=true;const image=SPRITES.astraAim;image.readyPromise=null;image.retryLoad=true;
-    image.auditDecode=image.decode;image.decode=()=>Promise.reject(new Error('controlled decode failure'));
-    const pending=readySprite(image);image.dispatchEvent(new Event('error'));await pending;
-    game.failedArtwork=[image];game.assetFailures=1;game.syncArtworkNotice();image.decode=image.auditDecode;
-    window.retryHero=game.activeHero;game.paused=false;
-  });
+  await page.evaluate(()=>{game.paused=true;window.retryHero=game.activeHero;});
+  assert.equal(await page.evaluate(()=>game.assetFailures),1,'controlled missing blast art remains available for Retry');
   assert(await page.locator('#assetNotice').isVisible());await page.click('#retryArtwork');
   await page.waitForFunction(()=>game.assetFailures===0&&!game.artworkRetrying);
   assert(await page.evaluate(()=>game.activeHero===window.retryHero),'retry preserves the hero/mission');

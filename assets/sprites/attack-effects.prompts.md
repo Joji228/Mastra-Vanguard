@@ -1,0 +1,31 @@
+# Generated attack effect sprites
+
+Generated on 2026-10-11 with the built-in ImageGen tool. Runtime sheets preserve the generated RGBA pixels and add transparent gutters with `tools/pack-attack-vfx.py`; no painting or background replacement was used.
+
+## Boss slam energy
+
+Asset: `boss-slam-energy-frames-v1.png`, 1920 × 1280, 3 × 2 cells of 640 pixels. Top row: Warden, Devourer and Heliarch warning rings. Bottom row: matching released blasts. Source: 1536 × 1024, columns split at 0/518/1028/1536 and rows at 0/490/1024, packed at offset 50. Runtime anchors: (314,296), (298,296), (292,296), (314,298), (298,298), (292,298). The artwork is clipped to the real circular attack radius, with a native outline retained for precise range cues.
+
+Prompt:
+
+Use case: stylized-concept. Asset type: transparent game VFX sprite atlas for three supervillain boss circular AOE attacks. Create SIX isolated perfectly circular front-view ENERGY RINGS in a strict THREE COLUMNS by TWO ROWS grid, 1536x1024 landscape. Each ring centered exactly in its square cell, same diameter, whole ring including glow fits within central 70 percent of cell with LARGE TRANSPARENT gutters. Top row are charging/warning sigils: left magenta-pink mechanical prism ring with cyan accents; middle violet-magenta crystalline ring with small blue shard accents; right golden-amber solar ring with orange fire accents. Bottom row are the corresponding released shockwave coronas in same three colors: left sharp magenta geometric energy ring; middle jagged purple crystalline expanding shock ring; right fiery golden solar blast ring. Rings are FLAT PERFECT CIRCLES seen head-on, no perspective ellipses, no floor, no characters, no environment. Empty transparent center in every ring; power concentrated on annular rim. Visible energy structure, sparks, detailed painterly glow matching polished fantasy/superhero 2D game sprites, readable at small scale. Keep external wisps short; no streak crosses a cell border. Real transparent background, no black rectangles, no checkerboard, no labels or grid lines, no text.
+
+## Solar foundry zones
+
+Asset: `heliarch-foundry-zone-frames-v1.png`, 1408 × 1408, 2 × 2 cells of 704 pixels. Warning, ignition, active and collapse frames. Source: 1254 square, cells 627, packed at offset 38. Anchors: (370,359), (356,359), (370,335), (356,335). Boss zones remain circular at the locked flight altitude; Weaver floor zones use the existing 0.22 vertical scale. Textures remain inside the damaging shape.
+
+Prompt:
+
+Use case: stylized-concept. Asset type: transparent game VFX animation sprite sheet for Heliarch Zero's airborne solar foundry zones. Four isolated effects in perfect TWO BY TWO regular grid, square canvas. All effects are PERFECT ROUND circles viewed straight on, centered in their cell, same diameter and scale. Top left: delicate golden arcane solar charging glyph, thin runic segments and a small central star, transparent center. Top right: ignition, contained amber/orange plasma swirling inside a gold circular rim with a bright center flare. Bottom left: active solar fire vortex, textured amber and orange flames revolving inside circular rim, hot ivory center, energetic but compact. Bottom right: collapse, thinning amber ring with short inward wisps and fading central ember. ALL effects remain inside central 65 percent of each cell, large empty transparent gutters between cells and at the outer canvas boundaries. Fantasy/superhero painterly game VFX, sharp details, luminous but controlled. No floor, no oval perspective, no characters, no environment, no text or labels. Real transparent alpha background, empty pixels around effects; NO colored backdrop, NO black backdrop, no gradient background, no checkerboard pattern. Glow is only local to effect edges, do not fill the whole canvas with glow.
+
+## Solar core attacks
+
+Asset: `heliarch-core-energy-frames-v1.png`, 1536 × 1536, 2 × 2 cells of 768 pixels. Round projectile, emitter flare, horizontal laser and endpoint flare. Source: 1254 square. Crop rectangles (left,top,right,bottom): (160,210,515,570), (680,140,1180,615), (65,810,750,1080), (785,710,1215,1160). Packed at offset 32, preserving the full beam beyond the source grid's midpoint. Anchors: (212,218), (284,272), (370,176), (242,272). Beam sampling rectangle: (62,865,612,158), stretched along the ray and clipped to the 26-pixel hit band. Orbs are centered on their projectile hitbox; emitter flare uses the registered chest origin.
+
+Prompt:
+
+Use case: stylized-concept. Asset type: transparent 2D action-game solar attack VFX sprite atlas. FOUR different isolated effects arranged TWO COLUMNS by TWO ROWS in a square canvas. Golden amber and orange solar energy matching an ivory-and-gold armored solar boss. Top left: a SMALL ROUND solar plasma projectile, bright molten white-gold nucleus and amber corona, circular symmetrical, no long tail. Top right: a solar chest-emitter muzzle flare, ROUND star-shaped compact ignition flash with curling orange plasma, white-gold central star. Bottom left: one STRAIGHT HORIZONTAL beam texture strip pointing RIGHT, across central 60% width, centered at mid-height of cell, THIN bright white-gold central line, layered amber/orange energy ribbons tightly hugging that line, flat beam profile at left and right ends, no curved path, no floor. Bottom right: ROUND star-like beam endpoint flare, compact bright solar burst, small controlled golden sparks. Keep every effect fully contained INSIDE central 65% of its cell, HUGE EMPTY TRANSPARENT GUTTERS on ALL SIDES of all cells, no overlapping neighbors. Detailed painterly superhero/fantasy game effects, distinct shapes readable at small size. No characters, environment, scenery, labels, text, grid or frames. REAL TRANSPARENT ALPHA background, no black backdrop, no colored gradient backdrop, no checkerboard; glow confined to effect.
+
+## Validation and fallback
+
+Every runtime cell has fully transparent outer edges. The native warning circles, damage rims, laser cues and projectile fallback remain available if artwork cannot load. The new textures are loaded with their stage rather than requested for unrelated campaign stages. Gameplay timing, damage, projectile speed and attack ranges are unchanged by this visual follow-up.

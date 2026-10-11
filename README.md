@@ -88,4 +88,4 @@ Choose **Stage 1**, clear the hostiles, and follow the arena marker to the boss.
 
 A long-term creative project by [Joji228](https://github.com/Joji228), developed with **Codex**, beginning with **GPT-5.6**.
 
-**Current version: 0.11** · [Report a bug](https://github.com/Joji228/Mastra-Vanguard/issues) · [Development & tests](docs/DEVELOPMENT.md) · [Presentation assets](docs/PRESENTATION.md)
+**Current version: 0.12** · Boss combat & effects · [Report a bug](https://github.com/Joji228/Mastra-Vanguard/issues) · [Development & tests](docs/DEVELOPMENT.md) · [Presentation assets](docs/PRESENTATION.md)

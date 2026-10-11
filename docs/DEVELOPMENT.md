@@ -42,6 +42,8 @@ node tools/browser-audit.mjs
 | --- | --- |
 | `browser-audit.mjs` | All three campaign completion paths, powers, menus, restarts, fullscreen, asset recovery and console errors |
 | `release-audit.mjs` | Sprite registration, boss geometry, combat probes and crowded-range checks |
+| `boss-fights-audit.mjs` | Airborne slam damage, normal-health boss pressure probes and replacement pose/warning captures |
+| `attack-vfx-audit.mjs` | Generated attack assets, circle/laser pixel containment, reduced settings, missing-image fallbacks and visual captures |
 | `flight-hud-audit.mjs` | Flight poses, aiming and windowed HUD |
 | `ui-fit-audit.mjs` | Menu/settings fit across viewport sizes |
 | `ui-polish-audit.mjs` | HUD and interface state combinations |

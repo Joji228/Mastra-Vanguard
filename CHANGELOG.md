@@ -1,5 +1,11 @@
 # Release history
 
+## Version 0.12
+
+- Airborne slam blasts and stronger boss difficulty progression
+- Replaced clipped boss sprites and added new attack effects
+- Final gameplay, loading, and UI audits passed
+
 ## Version 0.11
 
 - Smoother Astra aiming/animation and reliable Power Launch
